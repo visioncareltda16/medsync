@@ -239,7 +239,11 @@ export default function DashboardPage() {
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                 />
-                <Bar dataKey="valor" name="Faturamento" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="valor" name="Faturamento" radius={[4, 4, 0, 0]}>
+                  {chartData.locationData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
