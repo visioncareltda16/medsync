@@ -1,11 +1,12 @@
 import { auth, db } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
   signOut, 
   sendPasswordResetEmail,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuthStore, UserProfile } from '@/store/useAuthStore';
 
 // Initialize auth listener
@@ -43,6 +44,21 @@ export const initAuthListener = () => {
 
 export const login = async (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
+};
+
+export const registerUser = async (name: string, email: string, password: string) => {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const user = userCredential.user;
+  
+  // Create user profile in firestore with PENDENTE role
+  await setDoc(doc(db, 'users', user.uid), {
+    name,
+    email,
+    role: 'PENDENTE',
+    createdAt: Date.now()
+  });
+  
+  return userCredential;
 };
 
 export const logout = async () => {

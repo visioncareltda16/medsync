@@ -14,7 +14,7 @@ import { Users as UsersIcon, AlertCircle } from 'lucide-react';
 const userSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('E-mail inválido'),
-  role: z.enum(['ADMIN', 'MÉDICO']),
+  role: z.enum(['ADMIN', 'MÉDICO', 'PENDENTE']),
   doctorId: z.string().optional(),
 });
 
@@ -115,6 +115,8 @@ export default function UsersPage() {
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
           item.role === 'ADMIN' 
             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' 
+            : item.role === 'PENDENTE'
+            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
             : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
         }`}>
           {item.role}
@@ -200,6 +202,7 @@ export default function UsersPage() {
             >
               <option value="ADMIN">Administrador</option>
               <option value="MÉDICO">Médico</option>
+              <option value="PENDENTE">Pendente</option>
             </select>
           </div>
 

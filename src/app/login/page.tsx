@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { login, resetPassword } from '@/services/auth';
-import { Stethoscope, Lock, Mail, AlertCircle, ArrowLeft } from 'lucide-react';
+import { login, resetPassword, registerUser } from '@/services/auth';
+import { Stethoscope, Lock, Mail, AlertCircle, ArrowLeft, User } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -16,11 +16,22 @@ const forgotSchema = z.object({
   email: z.string().email('Email inválido'),
 });
 
+const registerSchema = z.object({
+  name: z.string().min(2, 'Nome é obrigatório'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
 type LoginForm = z.infer<typeof loginSchema>;
 type ForgotForm = z.infer<typeof forgotSchema>;
+type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function LoginPage() {
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [view, setView] = useState<'login' | 'forgot' | 'register'>('login');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +42,10 @@ export default function LoginPage() {
 
   const { register: registerForgot, handleSubmit: handleForgotSubmit, formState: { errors: forgotErrors } } = useForm<ForgotForm>({
     resolver: zodResolver(forgotSchema)
+  });
+
+  const { register: registerSignup, handleSubmit: handleRegisterSubmit, formState: { errors: registerErrors } } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema)
   });
 
   const onLogin = async (data: LoginForm) => {
@@ -60,6 +75,21 @@ export default function LoginPage() {
     }
   };
 
+  const onRegister = async (data: RegisterForm) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setSuccess(null);
+      await registerUser(data.name, data.email, data.password);
+      setSuccess('Cadastro realizado! Sua conta está aguardando liberação do administrador.');
+      setView('login');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao criar conta.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950">
       {/* Left panel - Branding */}
@@ -79,7 +109,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold tracking-tight">MedSync</h1>
           </div>
 
-          {!isForgotPassword ? (
+          {view === 'login' && (
             <>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Bem-vindo de volta</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-8">Faça login na sua conta para continuar</p>
@@ -132,12 +162,24 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => {
-                      setIsForgotPassword(true);
+                      setView('register');
                       setError(null);
+                      setSuccess(null);
+                    }}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                  >
+                    Solicitar acesso
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setView('forgot');
+                      setError(null);
+                      setSuccess(null);
                     }}
                     className="text-sm font-medium text-blue-600 hover:text-blue-500"
                   >
@@ -154,10 +196,16 @@ export default function LoginPage() {
                 </button>
               </form>
             </>
-          ) : (
+          )}
+
+          {view === 'forgot' && (
             <>
               <button 
-                onClick={() => setIsForgotPassword(false)}
+                onClick={() => {
+                  setView('login');
+                  setError(null);
+                  setSuccess(null);
+                }}
                 className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 mb-6 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -207,6 +255,122 @@ export default function LoginPage() {
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
                 >
                   {isLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {view === 'register' && (
+            <>
+              <button 
+                onClick={() => {
+                  setView('login');
+                  setError(null);
+                  setSuccess(null);
+                }}
+                className="flex items-center text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 mb-6 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para o login
+              </button>
+
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Solicitar Acesso</h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-8">Preencha seus dados para criar sua conta</p>
+
+              {error && (
+                <div className="mb-4 p-4 rounded-lg bg-red-50 text-red-600 text-sm flex items-start">
+                  <AlertCircle className="w-5 h-5 mr-2 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleRegisterSubmit(onRegister)} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Nome Completo
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      {...registerSignup('name')}
+                      type="text"
+                      className="block w-full pl-10 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                  {registerErrors.name && (
+                    <p className="mt-1 text-sm text-red-500">{registerErrors.name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    E-mail
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      {...registerSignup('email')}
+                      type="email"
+                      className="block w-full pl-10 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                  {registerErrors.email && (
+                    <p className="mt-1 text-sm text-red-500">{registerErrors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Senha
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      {...registerSignup('password')}
+                      type="password"
+                      className="block w-full pl-10 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {registerErrors.password && (
+                    <p className="mt-1 text-sm text-red-500">{registerErrors.password.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Confirmar Senha
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <input
+                      {...registerSignup('confirmPassword')}
+                      type="password"
+                      className="block w-full pl-10 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {registerErrors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-500">{registerErrors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isLoading ? 'Criando conta...' : 'Criar conta'}
                 </button>
               </form>
             </>

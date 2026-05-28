@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User as FirebaseUser } from 'firebase/auth';
 
-export type UserRole = 'ADMIN' | 'MÉDICO';
+export type UserRole = 'ADMIN' | 'MÉDICO' | 'PENDENTE';
 
 export interface UserProfile {
   id: string;

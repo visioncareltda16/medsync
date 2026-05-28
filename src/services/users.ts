@@ -14,7 +14,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'MÉDICO';
+  role: 'ADMIN' | 'MÉDICO' | 'PENDENTE';
   doctorId?: string; // Vinculo com perfil de médico
 }
 

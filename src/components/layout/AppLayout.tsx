@@ -52,6 +52,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Block pending users
+  if (profile?.role === 'PENDENTE') {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Conta em Análise</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">
+            Seu cadastro foi realizado com sucesso e está aguardando a liberação do administrador. 
+            Você terá acesso ao sistema assim que seu perfil for aprovado.
+          </p>
+          <button
+            onClick={() => {
+              import('@/services/auth').then(({ logout }) => logout());
+            }}
+            className="w-full py-3 px-4 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Sair e voltar ao Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
       <Sidebar />
