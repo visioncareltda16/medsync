@@ -18,7 +18,7 @@ import { Building2 } from 'lucide-react';
 const locationSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   address: z.string().min(1, 'Endereço é obrigatório'),
-  active: z.boolean().default(true),
+  active: z.boolean(),
 });
 
 type LocationForm = z.infer<typeof locationSchema>;
