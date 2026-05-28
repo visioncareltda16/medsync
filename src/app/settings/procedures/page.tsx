@@ -82,9 +82,9 @@ export default function ProceduresPage() {
   const onSubmit = async (data: ProcedureForm) => {
     try {
       if (editingProcedure) {
-        await updateProcedure(editingProcedure.id, data);
+        await updateProcedure(editingProcedure.id, data as any);
       } else {
-        await addProcedure(data);
+        await addProcedure(data as any);
       }
       closeModal();
       fetchData();
