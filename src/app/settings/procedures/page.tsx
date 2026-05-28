@@ -117,7 +117,7 @@ export default function ProceduresPage() {
           item.type === 'Cirurgia' 
             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' 
             : item.type === 'Exame'
-            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300'
             : 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300'
         }`}>
           {item.type || 'Consulta'}
