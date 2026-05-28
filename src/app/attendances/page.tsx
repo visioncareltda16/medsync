@@ -472,45 +472,57 @@ export default function AttendancesPage() {
 
       {/* Modal Novo Lançamento */}
       <Modal isOpen={isModalOpen} onClose={closeModal} title={editingAttendance ? 'Editar Lançamento' : 'Novo Lançamento'}>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data</label>
-              <input type="date" {...register('date')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.date && <p className="mt-1 text-sm text-red-500">{errors.date.message}</p>}
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Data</label>
+              <input type="date" {...register('date')} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              {errors.date && <p className="mt-0.5 text-xs text-red-500">{errors.date.message}</p>}
             </div>
 
             {isAdmin && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Médico</label>
-                <select {...register('doctorId')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Médico</label>
+                <select {...register('doctorId')} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                   <option value="">Selecione...</option>
                   {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
-                {errors.doctorId && <p className="mt-1 text-sm text-red-500">{errors.doctorId.message}</p>}
+                {errors.doctorId && <p className="mt-0.5 text-xs text-red-500">{errors.doctorId.message}</p>}
               </div>
             )}
 
             <div className={isAdmin ? 'md:col-span-2' : 'md:col-span-1'}>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Local de Atendimento</label>
-              <select {...register('locationId')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Local de Atendimento</label>
+              <select {...register('locationId')} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="">Selecione...</option>
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-              {errors.locationId && <p className="mt-1 text-sm text-red-500">{errors.locationId.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Convênio</label>
-              <select {...register('insuranceId')} disabled={!watchLocationId} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
-                <option value="">Selecione...</option>
-                {availableInsurances.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-              </select>
-              {errors.insuranceId && <p className="mt-1 text-sm text-red-500">{errors.insuranceId.message}</p>}
+              {errors.locationId && <p className="mt-0.5 text-xs text-red-500">{errors.locationId.message}</p>}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Nome do Paciente</label>
+              <input type="text" {...register('patientName')} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              {errors.patientName && <p className="mt-0.5 text-xs text-red-500">{errors.patientName.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Convênio</label>
+              <select {...register('insuranceId')} disabled={!watchLocationId} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
+                <option value="">Selecione...</option>
+                {availableInsurances.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+              {errors.insuranceId && <p className="mt-0.5 text-xs text-red-500">{errors.insuranceId.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Quantidade</label>
+              <input type="number" {...register('quantity', { valueAsNumber: true })} min="1" className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              {errors.quantity && <p className="mt-0.5 text-xs text-red-500">{errors.quantity.message}</p>}
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">
                 Procedimentos {editingAttendance && <span className="text-amber-500 font-normal">(Edição restrita)</span>}
               </label>
               <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-1">
@@ -555,22 +567,10 @@ export default function AttendancesPage() {
                   })}
                 </div>
                 {procedures.length === 0 && (
-                  <p className="text-sm text-slate-500 p-2">Nenhum procedimento encontrado.</p>
+                  <p className="text-xs text-slate-500 p-2">Nenhum procedimento encontrado.</p>
                 )}
               </div>
-              {errors.procedureIds && <p className="mt-1 text-sm text-red-500">{errors.procedureIds.message as string}</p>}
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome do Paciente</label>
-              <input type="text" {...register('patientName')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.patientName && <p className="mt-1 text-sm text-red-500">{errors.patientName.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Quantidade</label>
-              <input type="number" {...register('quantity', { valueAsNumber: true })} min="1" className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.quantity && <p className="mt-1 text-sm text-red-500">{errors.quantity.message}</p>}
+              {errors.procedureIds && <p className="mt-0.5 text-xs text-red-500">{errors.procedureIds.message as string}</p>}
             </div>
 
               {/* Configuração Financeira Transparente */}
