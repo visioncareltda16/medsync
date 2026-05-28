@@ -162,7 +162,7 @@ export default function AttendancesPage() {
     const finalDoctorId = data.doctorId || (!isAdmin && profile?.doctorId ? profile.doctorId : '');
 
     if (!finalDoctorId) {
-      alert('Erro: Médico não identificado. Entre em contato com o suporte.');
+      alert('Erro: Por favor, selecione um médico (ou cadastre um novo na aba Médicos).');
       return;
     }
 
@@ -333,6 +333,9 @@ export default function AttendancesPage() {
                       <thead className="bg-slate-50/50 dark:bg-slate-900">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</th>
+                          {isAdmin && (
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Médico</th>
+                          )}
                           <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Paciente/Proced.</th>
                           <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Convênio</th>
                           <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Qtd</th>
@@ -348,6 +351,11 @@ export default function AttendancesPage() {
                               <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{format(parseISO(item.date), 'dd/MM/yyyy')}</div>
                               <div className="text-xs text-slate-500 capitalize">{item.dayOfWeek}</div>
                             </td>
+                            {isAdmin && (
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {doctors.find(d => d.id === item.doctorId)?.name || 'Desconhecido'}
+                              </td>
+                            )}
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.patientName}</div>
                               <div className="text-xs text-slate-500">{procedures.find(p => p.id === item.procedureId)?.name}</div>
