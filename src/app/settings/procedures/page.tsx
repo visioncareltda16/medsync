@@ -81,10 +81,23 @@ export default function ProceduresPage() {
 
   const onSubmit = async (data: ProcedureForm) => {
     try {
+      const cleanValues = data.values || {};
+      Object.keys(cleanValues).forEach(key => {
+        if (cleanValues[key] === undefined || isNaN(cleanValues[key])) {
+          cleanValues[key] = 0;
+        }
+      });
+
+      const cleanData = {
+        name: data.name,
+        code: data.code,
+        values: cleanValues
+      };
+
       if (editingProcedure) {
-        await updateProcedure(editingProcedure.id, data as any);
+        await updateProcedure(editingProcedure.id, cleanData as any);
       } else {
-        await addProcedure(data as any);
+        await addProcedure(cleanData as any);
       }
       closeModal();
       fetchData();
