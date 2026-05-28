@@ -66,8 +66,13 @@ export default function ReportsPage() {
       if (filterLocation) data = data.filter(a => a.locationId === filterLocation);
       if (filterInsurance) data = data.filter(a => a.insuranceId === filterInsurance);
 
-      // Sort Data A-Z
-      data.sort((a, b) => a.patientName.localeCompare(b.patientName));
+      // Sort Data by Date ascending, then Patient Name
+      data.sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return a.patientName.localeCompare(b.patientName);
+      });
 
       // Header
       doc.setFontSize(20);
