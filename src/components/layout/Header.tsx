@@ -1,6 +1,9 @@
-import { Menu, Bell, User } from 'lucide-react';
+import { Menu, Bell, User, Eye, EyeOff } from 'lucide-react';
+import { useUIStore } from '@/store/useUIStore';
 
 export default function Header() {
+  const { showValues, toggleValues } = useUIStore();
+
   return (
     <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6">
       <div className="flex items-center">
@@ -10,6 +13,14 @@ export default function Header() {
       </div>
       
       <div className="flex items-center space-x-4">
+        <button 
+          onClick={toggleValues}
+          className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition-colors"
+          title={showValues ? "Ocultar valores" : "Mostrar valores"}
+        >
+          {showValues ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+        </button>
+
         <button className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 relative">
           <Bell className="w-5 h-5" />
           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>

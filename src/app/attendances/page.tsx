@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useUIStore } from '@/store/useUIStore';
 import { Modal } from '@/components/ui/Modal';
 import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ type AttendanceForm = z.infer<typeof attendanceSchema>;
 
 export default function AttendancesPage() {
   const { profile } = useAuthStore();
+  const { showValues } = useUIStore();
   const isAdmin = profile?.role === 'ADMIN';
 
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -411,12 +413,12 @@ export default function AttendancesPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                R$ {item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                {showValues ? `R$ ${item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                               </div>
                               <div className="text-xs text-slate-500">
                                 {item.transferType === 'FIXED' 
                                   ? `Fixo de R$ ${item.transferRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-                                  : `${item.transferRate}% de R$ ${item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                  : `${item.transferRate}% de R$ ${showValues ? item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '****'}`}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -463,7 +465,7 @@ export default function AttendancesPage() {
 
               <div className="bg-blue-600 text-white rounded-xl p-6 flex justify-between items-center shadow-lg">
                 <h3 className="text-xl font-bold uppercase tracking-wide">Total Geral do Mês</h3>
-                <p className="text-3xl font-extrabold">R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-extrabold">{showValues ? `R$ ${totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}</p>
               </div>
             </>
           )}
@@ -588,19 +590,19 @@ export default function AttendancesPage() {
                         <div>
                           <span className="block text-[10px] text-slate-500 uppercase">Base/Repasse</span>
                           <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
-                            R$ {config.baseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / {config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}
+                            {showValues ? `R$ ${config.baseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
                           </span>
                         </div>
                         <div>
                           <span className="block text-[10px] text-slate-500 uppercase">Taxa Local</span>
                           <span className="font-medium text-xs text-red-600 dark:text-red-400">
-                            - R$ {config.localRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {showValues ? `- R$ ${config.localRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '- R$ ****'}
                           </span>
                         </div>
                         <div className="text-right">
                           <span className="block text-[10px] text-slate-500 uppercase">Líquido</span>
                           <span className="font-bold text-xs text-blue-700 dark:text-blue-400">
-                            R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            {showValues ? `R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                           </span>
                         </div>
                       </div>
@@ -613,7 +615,7 @@ export default function AttendancesPage() {
           <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mt-4 flex items-center justify-between">
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Subtotal Previsto:</span>
             <span className="text-xl font-bold text-slate-900 dark:text-white">
-              R$ {currentSubtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {showValues ? `R$ ${currentSubtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
             </span>
           </div>
 

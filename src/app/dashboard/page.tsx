@@ -12,11 +12,13 @@ import {
 } from 'recharts';
 import { format, subMonths } from 'date-fns';
 import { DollarSign, Activity, CalendarClock, TrendingUp } from 'lucide-react';
+import { useUIStore } from '@/store/useUIStore';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 export default function DashboardPage() {
   const { profile } = useAuthStore();
+  const { showValues } = useUIStore();
   const isAdmin = profile?.role === 'ADMIN';
 
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -161,7 +163,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Faturamento Previsto</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              R$ {kpis.totalMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {showValues ? `R$ ${kpis.totalMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
             </p>
           </div>
         </div>
@@ -173,7 +175,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Recebido</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              R$ {kpis.totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {showValues ? `R$ ${kpis.totalRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
             </p>
           </div>
         </div>
@@ -185,7 +187,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">A Receber</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">
-              R$ {kpis.totalAReceber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {showValues ? `R$ ${kpis.totalAReceber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
             </p>
           </div>
         </div>
