@@ -22,7 +22,7 @@ const attendanceSchema = z.object({
   locationId: z.string().min(1, 'Local é obrigatório'),
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
-  procedureId: z.string().min(1, 'Procedimento é obrigatório'),
+  procedureIds: z.array(z.string()).min(1, 'Selecione pelo menos um procedimento'),
   quantity: z.number().min(1, 'Quantidade deve ser maior que 0')
 });
 
@@ -55,7 +55,7 @@ export default function AttendancesPage() {
 
   const watchLocationId = watch('locationId');
   const watchInsuranceId = watch('insuranceId');
-  const watchProcedureId = watch('procedureId');
+  const watchProcedureIds = watch('procedureIds') || [];
   const watchQuantity = watch('quantity') || 1;
 
   const fetchData = async () => {
@@ -96,27 +96,32 @@ export default function AttendancesPage() {
   }, [watchLocationId, insurances]);
 
   // Derived transfer config
-  const procedureConfig = useMemo(() => {
-    if (!watchLocationId || !watchInsuranceId || !watchProcedureId) return null;
-    const proc = procedures.find(p => p.id === watchProcedureId);
-    if (!proc) return null;
-    const key = `${watchInsuranceId}_${watchLocationId}`;
-    return proc.values[key] || null;
-  }, [watchLocationId, watchInsuranceId, watchProcedureId, procedures]);
+  const selectedConfigs = useMemo(() => {
+    if (!watchLocationId || !watchInsuranceId || !watchProcedureIds.length) return [];
+    
+    return watchProcedureIds.map(procId => {
+      const proc = procedures.find(p => p.id === procId);
+      if (!proc) return null;
+      const key = `${watchInsuranceId}_${watchLocationId}`;
+      const config = proc.values[key];
+      if (!config) return null;
+      
+      let gross = 0;
+      if (config.transferType === 'FIXED') {
+        gross = config.transferRate * watchQuantity;
+      } else {
+        gross = (config.baseValue * (config.transferRate / 100)) * watchQuantity;
+      }
+      const local = config.localRate * watchQuantity;
+      const subtotal = gross - local;
+
+      return { proc, config, subtotal };
+    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number }>;
+  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantity]);
 
   const currentSubtotal = useMemo(() => {
-    if (!procedureConfig) return 0;
-    
-    let gross = 0;
-    if (procedureConfig.transferType === 'FIXED') {
-      gross = procedureConfig.transferRate * watchQuantity;
-    } else {
-      gross = (procedureConfig.baseValue * (procedureConfig.transferRate / 100)) * watchQuantity;
-    }
-    
-    const local = procedureConfig.localRate * watchQuantity;
-    return gross - local;
-  }, [procedureConfig, watchQuantity]);
+    return selectedConfigs.reduce((acc, curr) => acc + curr.subtotal, 0);
+  }, [selectedConfigs]);
 
   const openModal = (attendance?: Attendance) => {
     if (attendance) {
@@ -126,13 +131,14 @@ export default function AttendancesPage() {
       setValue('locationId', attendance.locationId);
       setValue('patientName', attendance.patientName);
       setValue('insuranceId', attendance.insuranceId);
-      setValue('procedureId', attendance.procedureId);
+      setValue('procedureIds', [attendance.procedureId]);
       setValue('quantity', attendance.quantity);
     } else {
       setEditingAttendance(null);
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
         doctorId: profile?.doctorId ? profile.doctorId : '',
+        procedureIds: [],
         quantity: 1
       });
     }
@@ -156,34 +162,67 @@ export default function AttendancesPage() {
       return;
     }
 
-    const tType = procedureConfig?.transferType || editingAttendance?.transferType || 'PERCENTAGE';
-    const tRate = procedureConfig?.transferRate || editingAttendance?.transferRate || 0;
-    const bValue = procedureConfig?.baseValue || editingAttendance?.baseValue || 0;
-    const lRate = procedureConfig?.localRate || editingAttendance?.localRate || 0;
-
-    const payload: Omit<Attendance, 'id'> = {
-      ...data,
-      doctorId: finalDoctorId,
-      month: format(dateObj, 'yyyy-MM'),
-      dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
-      transferType: tType,
-      transferRate: tRate,
-      baseValue: bValue,
-      localRate: lRate,
-      transferValue: bValue, // Mantém para compatibilidade se necessário
-      realValue: currentSubtotal,
-      subtotal: currentSubtotal,
-      status: editingAttendance ? editingAttendance.status : 'A RECEBER',
-      createdAt: editingAttendance ? editingAttendance.createdAt : Date.now(),
-      createdBy: editingAttendance?.createdBy || profile?.name || 'Desconhecido',
-      createdByRole: editingAttendance?.createdByRole || profile?.role || 'MÉDICO',
-    };
-
     try {
       if (editingAttendance) {
-        await updateAttendance(editingAttendance.id, payload);
+        const selConfig = selectedConfigs[0];
+        const tType = selConfig?.config?.transferType || editingAttendance.transferType || 'PERCENTAGE';
+        const tRate = selConfig?.config?.transferRate || editingAttendance.transferRate || 0;
+        const bValue = selConfig?.config?.baseValue || editingAttendance.baseValue || 0;
+        const lRate = selConfig?.config?.localRate || editingAttendance.localRate || 0;
+
+        const payload: any = {
+          ...data,
+          procedureId: data.procedureIds[0],
+          doctorId: finalDoctorId,
+          month: format(dateObj, 'yyyy-MM'),
+          dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
+          transferType: tType,
+          transferRate: tRate,
+          baseValue: bValue,
+          localRate: lRate,
+          transferValue: bValue,
+          realValue: currentSubtotal,
+          subtotal: currentSubtotal,
+          status: editingAttendance.status,
+          createdAt: editingAttendance.createdAt,
+          createdBy: editingAttendance.createdBy || profile?.name || 'Desconhecido',
+          createdByRole: editingAttendance.createdByRole || profile?.role || 'MÉDICO',
+        };
+        delete payload.procedureIds;
+        
+        await updateAttendance(editingAttendance.id, payload as Omit<Attendance, 'id'>);
       } else {
-        await addAttendance(payload);
+        const promises = data.procedureIds.map(procId => {
+          const sel = selectedConfigs.find(s => s.proc.id === procId);
+          const tType = sel?.config?.transferType || 'PERCENTAGE';
+          const tRate = sel?.config?.transferRate || 0;
+          const bValue = sel?.config?.baseValue || 0;
+          const lRate = sel?.config?.localRate || 0;
+          const subtotal = sel?.subtotal || 0;
+
+          const payload: any = {
+            ...data,
+            procedureId: procId,
+            doctorId: finalDoctorId,
+            month: format(dateObj, 'yyyy-MM'),
+            dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
+            transferType: tType,
+            transferRate: tRate,
+            baseValue: bValue,
+            localRate: lRate,
+            transferValue: bValue,
+            realValue: subtotal,
+            subtotal: subtotal,
+            status: 'A RECEBER',
+            createdAt: Date.now(),
+            createdBy: profile?.name || 'Desconhecido',
+            createdByRole: profile?.role || 'MÉDICO',
+          };
+          delete payload.procedureIds;
+          return addAttendance(payload as Omit<Attendance, 'id'>);
+        });
+
+        await Promise.all(promises);
       }
       closeModal();
       fetchData();
@@ -470,13 +509,34 @@ export default function AttendancesPage() {
               {errors.insuranceId && <p className="mt-1 text-sm text-red-500">{errors.insuranceId.message}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Procedimento</label>
-              <select {...register('procedureId')} disabled={!watchInsuranceId} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
-                <option value="">Selecione...</option>
-                {procedures.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              {errors.procedureId && <p className="mt-1 text-sm text-red-500">{errors.procedureId.message}</p>}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Procedimentos {editingAttendance && <span className="text-amber-500 font-normal">(Edição restrita)</span>}
+              </label>
+              <div className="max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-2 space-y-1">
+                {procedures.map(p => {
+                  const isChecked = watchProcedureIds.includes(p.id);
+                  const isEditingRestricted = editingAttendance !== null && !isChecked;
+                  return (
+                    <label key={p.id} className={`flex items-center space-x-3 p-2 rounded-md transition-colors ${isChecked ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-slate-100 dark:hover:bg-slate-700'} ${isEditingRestricted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <input 
+                        type={editingAttendance ? 'radio' : 'checkbox'} 
+                        disabled={!watchInsuranceId || isEditingRestricted}
+                        value={p.id}
+                        {...register('procedureIds')}
+                        className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
+                      />
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {p.name} <span className="text-xs text-slate-500 font-normal ml-2">({p.type})</span>
+                      </span>
+                    </label>
+                  );
+                })}
+                {procedures.length === 0 && (
+                  <p className="text-sm text-slate-500 p-2">Nenhum procedimento encontrado.</p>
+                )}
+              </div>
+              {errors.procedureIds && <p className="mt-1 text-sm text-red-500">{errors.procedureIds.message as string}</p>}
             </div>
 
             <div className="md:col-span-2">
@@ -492,44 +552,40 @@ export default function AttendancesPage() {
             </div>
 
               {/* Configuração Financeira Transparente */}
-              <div className="md:col-span-2 mt-2 border border-blue-100 dark:border-blue-900/30 rounded-lg overflow-hidden bg-blue-50/50 dark:bg-blue-900/10">
-                <div className="bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 border-b border-blue-100 dark:border-blue-900/30">
-                  <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
+              {selectedConfigs.length > 0 && (
+                <div className="md:col-span-2 mt-2 border border-blue-100 dark:border-blue-900/30 rounded-lg overflow-hidden bg-blue-50/50 dark:bg-blue-900/10">
+                  <div className="bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 border-b border-blue-100 dark:border-blue-900/30">
+                    <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto">
+                    {selectedConfigs.map(({ proc, config, subtotal }) => (
+                      <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
+                        <div className="md:col-span-2">
+                          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={proc.name}>{proc.name}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] text-slate-500 uppercase">Base/Repasse</span>
+                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
+                            R$ {config.baseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / {config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] text-slate-500 uppercase">Taxa Local</span>
+                          <span className="font-medium text-xs text-red-600 dark:text-red-400">
+                            - R$ {config.localRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="block text-[10px] text-slate-500 uppercase">Líquido</span>
+                          <span className="font-bold text-xs text-blue-700 dark:text-blue-400">
+                            R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <span className="block text-[10px] text-slate-500 uppercase">Valor Base</span>
-                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
-                      R$ {procedureConfig?.baseValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-slate-500 uppercase">Tipo</span>
-                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
-                      {procedureConfig?.transferType === 'FIXED' ? 'Valor Fixo' : 'Percentual'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-slate-500 uppercase">Repasse</span>
-                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
-                      {procedureConfig?.transferType === 'FIXED' 
-                        ? `R$ ${procedureConfig?.transferRate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
-                        : `${procedureConfig?.transferRate || 0}%`}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] text-slate-500 uppercase">Taxa Local</span>
-                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300 text-red-600 dark:text-red-400">
-                      - R$ {procedureConfig?.localRate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                    </span>
-                  </div>
-                </div>
-                {!procedureConfig && watchProcedureId && (
-                  <p className="px-3 pb-3 text-xs text-amber-600 dark:text-amber-400">
-                    Nenhum valor configurado para este Procedimento neste Local/Convênio.
-                  </p>
-                )}
-              </div>
+              )}
             </div>
 
           <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mt-4 flex items-center justify-between">
