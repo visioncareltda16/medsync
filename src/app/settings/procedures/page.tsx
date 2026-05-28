@@ -20,7 +20,7 @@ import { Activity } from 'lucide-react';
 const procedureSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   code: z.string().min(1, 'Código é obrigatório'),
-  values: z.record(z.string(), z.number().min(0)),
+  values: z.any().optional(),
 });
 
 type ProcedureForm = z.infer<typeof procedureSchema>;
@@ -154,7 +154,7 @@ export default function ProceduresPage() {
         onClose={closeModal}
         title={editingProcedure ? 'Editar Procedimento' : 'Novo Procedimento'}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit, (err) => console.log('Erros de validação:', err))} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
