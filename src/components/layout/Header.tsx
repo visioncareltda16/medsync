@@ -1,13 +1,18 @@
 import { Menu, Bell, User, Eye, EyeOff } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
+import { useLayoutStore } from '@/store/useLayoutStore';
 
 export default function Header() {
   const { showValues, toggleValues } = useUIStore();
+  const { toggleSidebar } = useLayoutStore();
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 z-30 relative">
       <div className="flex items-center">
-        <button className="lg:hidden text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+        <button 
+          onClick={toggleSidebar}
+          className="lg:hidden text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 mr-4"
+        >
           <Menu className="w-6 h-6" />
         </button>
       </div>
