@@ -176,6 +176,8 @@ export default function AttendancesPage() {
       subtotal: currentSubtotal,
       status: editingAttendance ? editingAttendance.status : 'A RECEBER',
       createdAt: editingAttendance ? editingAttendance.createdAt : Date.now(),
+      createdBy: editingAttendance?.createdBy || profile?.name || 'Desconhecido',
+      createdByRole: editingAttendance?.createdByRole || profile?.role || 'MÉDICO',
     };
 
     try {
@@ -340,7 +342,10 @@ export default function AttendancesPage() {
                           <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Convênio</th>
                           <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Qtd</th>
                           <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor Repasse</th>
-                          <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                          {isAdmin && (
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Lançado Por</th>
+                          )}
                           <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
                         </tr>
                       </thead>
@@ -387,6 +392,12 @@ export default function AttendancesPage() {
                                 </span>
                               )}
                             </td>
+                            {isAdmin && (
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-xs font-medium text-slate-900 dark:text-slate-100">{item.createdBy || 'Sistema'}</div>
+                                <div className="text-[10px] text-slate-500">{item.createdByRole === 'ADMIN' ? 'Admin' : 'Médico'}</div>
+                              </td>
+                            )}
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-2">
                                 {item.status === 'A RECEBER' && (

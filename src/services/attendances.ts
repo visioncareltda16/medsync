@@ -34,6 +34,8 @@ export interface Attendance {
   receivedDate?: string;
   receivedBy?: string;
   createdAt: number;
+  createdBy?: string;
+  createdByRole?: string;
 }
 
 const COLLECTION_NAME = 'attendances';

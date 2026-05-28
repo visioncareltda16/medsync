@@ -14,6 +14,7 @@ export interface Procedure {
   id: string;
   name: string;
   code: string;
+  type: 'Ambulatorial' | 'Cirúrgico';
   // Chave no formato: "insuranceId_locationId"
   values: Record<string, number>;
 }

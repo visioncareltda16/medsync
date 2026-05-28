@@ -24,6 +24,10 @@ export default function DashboardPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [insurances, setInsurances] = useState<Insurance[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Dashboard Admin Filters
+  const [filterDoctor, setFilterDoctor] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
 
   // Default to current month
   const currentMonth = format(new Date(), 'yyyy-MM');
@@ -33,9 +37,10 @@ export default function DashboardPage() {
       try {
         setLoading(true);
         // Fetch all data for the last 6 months to build evolution charts
-        const attData = await getAttendances(
-          !isAdmin && profile?.doctorId ? { doctorId: profile.doctorId } : undefined
-        );
+        const attData = await getAttendances({ 
+          doctorId: !isAdmin && profile?.doctorId ? profile.doctorId : (filterDoctor || undefined),
+          locationId: filterLocation || undefined
+        });
         const [locData, docData, insData] = await Promise.all([
           getLocations(),
           getDoctors(),
@@ -53,7 +58,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-  }, [isAdmin, profile]);
+  }, [isAdmin, profile, filterDoctor, filterLocation]);
 
   // Compute KPIs for current month
   const kpis = useMemo(() => {
@@ -115,9 +120,36 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Geral</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {currentMonth}.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Geral</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {currentMonth}.</p>
+        </div>
+        
+        {isAdmin && (
+          <div className="flex gap-4">
+            <div>
+              <select 
+                value={filterDoctor}
+                onChange={(e) => setFilterDoctor(e.target.value)}
+                className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+              >
+                <option value="">Todos os Médicos</option>
+                {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <select 
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+                className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+              >
+                <option value="">Todos os Locais</option>
+                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}

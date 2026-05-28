@@ -18,6 +18,7 @@ import { Building2 } from 'lucide-react';
 const locationSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   address: z.string().min(1, 'Endereço é obrigatório'),
+  phone: z.string().optional(),
   active: z.boolean(),
 });
 
@@ -55,10 +56,11 @@ export default function LocationsPage() {
       setEditingLocation(location);
       setValue('name', location.name);
       setValue('address', location.address);
+      setValue('phone', location.phone || '');
       setValue('active', location.active);
     } else {
       setEditingLocation(null);
-      reset({ active: true, name: '', address: '' });
+      reset({ active: true, name: '', address: '', phone: '' });
     }
     setIsModalOpen(true);
   };
@@ -99,6 +101,7 @@ export default function LocationsPage() {
   const columns = [
     { key: 'name', header: 'Nome' },
     { key: 'address', header: 'Endereço' },
+    { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
     { 
       key: 'active', 
       header: 'Status',
@@ -170,6 +173,18 @@ export default function LocationsPage() {
               placeholder="Av. Paulista, 1000 - SP"
             />
             {errors.address && <p className="mt-1 text-sm text-red-500">{errors.address.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Telefone de Contato
+            </label>
+            <input
+              {...register('phone')}
+              type="text"
+              className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="(11) 99999-9999"
+            />
           </div>
 
           <div className="flex items-center">
