@@ -21,7 +21,6 @@ const procedureSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   code: z.string().min(1, 'Código é obrigatório'),
   type: z.enum(['Ambulatorial', 'Cirúrgico']),
-  values: z.any().optional(),
 });
 
 type ProcedureForm = z.infer<typeof procedureSchema>;
@@ -36,20 +35,14 @@ export default function ProceduresPage() {
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<ProcedureForm>({
     resolver: zodResolver(procedureSchema),
-    defaultValues: { values: {}, type: 'Ambulatorial' }
+    defaultValues: { type: 'Ambulatorial' }
   });
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [procData, insData, locData] = await Promise.all([
-        getProcedures(),
-        getInsurances(),
-        getLocations()
-      ]);
+      const procData = await getProcedures();
       setProcedures(procData);
-      setInsurances(insData);
-      setLocations(locData.filter(l => l.active));
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -67,10 +60,9 @@ export default function ProceduresPage() {
       setValue('name', procedure.name);
       setValue('code', procedure.code);
       setValue('type', procedure.type || 'Ambulatorial');
-      setValue('values', procedure.values || {});
     } else {
       setEditingProcedure(null);
-      reset({ name: '', code: '', type: 'Ambulatorial', values: {} });
+      reset({ name: '', code: '', type: 'Ambulatorial' });
     }
     setIsModalOpen(true);
   };
@@ -83,34 +75,16 @@ export default function ProceduresPage() {
 
   const onSubmit = async (data: ProcedureForm) => {
     try {
-      const cleanValues: Record<string, any> = data.values || {};
-      Object.keys(cleanValues).forEach(key => {
-        if (!cleanValues[key]) {
-          cleanValues[key] = { baseValue: 0, transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
-        } else {
-          // If old format (number), convert it
-          if (typeof cleanValues[key] === 'number') {
-            cleanValues[key] = { baseValue: cleanValues[key], transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
-          }
-          // Ensure fields exist
-          cleanValues[key].baseValue = isNaN(cleanValues[key].baseValue) ? 0 : Number(cleanValues[key].baseValue);
-          cleanValues[key].transferRate = isNaN(cleanValues[key].transferRate) ? 0 : Number(cleanValues[key].transferRate);
-          cleanValues[key].localRate = isNaN(cleanValues[key].localRate) ? 0 : Number(cleanValues[key].localRate);
-          cleanValues[key].transferType = cleanValues[key].transferType || 'PERCENTAGE';
-        }
-      });
-
       const cleanData = {
         name: data.name,
         code: data.code,
         type: data.type,
-        values: cleanValues
       };
 
       if (editingProcedure) {
-        await updateProcedure(editingProcedure.id, cleanData as any);
+        await updateProcedure(editingProcedure.id, cleanData);
       } else {
-        await addProcedure(cleanData as any);
+        await addProcedure({ ...cleanData, values: {} });
       }
       closeModal();
       fetchData();
@@ -147,14 +121,6 @@ export default function ProceduresPage() {
           {item.type || 'Ambulatorial'}
         </span>
       )
-    },
-    {
-      key: 'values',
-      header: 'Valores Configurados',
-      render: (item: Procedure) => {
-        const count = Object.keys(item.values || {}).length;
-        return <span className="text-sm">{count} valores definidos</span>;
-      }
     }
   ];
 
@@ -233,112 +199,7 @@ export default function ProceduresPage() {
                 <option value="Cirúrgico">Cirúrgico (Cirurgias)</option>
               </select>
               {errors.type && <p className="mt-1 text-sm text-red-500">{errors.type.message as any}</p>}
-            </div>
           </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-              Valores por Convênio e Local
-            </h4>
-            <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
-              {insurances.map(insurance => {
-                const linkedLocations = locations.filter(loc => insurance.locationIds.includes(loc.id));
-                if (linkedLocations.length === 0) return null;
-
-                return (
-                  <div key={insurance.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
-                    <h5 className="font-medium text-sm text-slate-800 dark:text-slate-200 mb-2">{insurance.name}</h5>
-                    <div className="space-y-2">
-                      {linkedLocations.map(loc => {
-                        const fieldName = `values.${insurance.id}_${loc.id}` as const;
-                        return (
-                          <div key={loc.id} className="flex flex-col gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md">
-                            <span className="text-slate-700 dark:text-slate-300 font-semibold text-sm border-b border-slate-100 dark:border-slate-800 pb-1">
-                              {loc.name}
-                            </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-1">
-                              {/* Valor Base */}
-                              <div>
-                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Valor Base (R$)</label>
-                                <Controller
-                                  name={`${fieldName}.baseValue`}
-                                  control={control}
-                                  render={({ field: { onChange, value } }) => (
-                                    <input
-                                      type="number" step="0.01" min="0" value={value || ''}
-                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
-                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                                      placeholder="0.00"
-                                    />
-                                  )}
-                                />
-                              </div>
-
-                              {/* Tipo de Repasse */}
-                              <div>
-                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Repasse</label>
-                                <Controller
-                                  name={`${fieldName}.transferType`}
-                                  control={control}
-                                  defaultValue="PERCENTAGE"
-                                  render={({ field: { onChange, value } }) => (
-                                    <select
-                                      value={value || 'PERCENTAGE'}
-                                      onChange={onChange}
-                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                                    >
-                                      <option value="PERCENTAGE">Percentual (%)</option>
-                                      <option value="FIXED">Fixo (R$)</option>
-                                    </select>
-                                  )}
-                                />
-                              </div>
-
-                              {/* Taxa de Repasse */}
-                              <div>
-                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Valor Repasse</label>
-                                <Controller
-                                  name={`${fieldName}.transferRate`}
-                                  control={control}
-                                  render={({ field: { onChange, value } }) => (
-                                    <input
-                                      type="number" step="0.01" min="0" value={value || ''}
-                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
-                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                                      placeholder="0.00"
-                                    />
-                                  )}
-                                />
-                              </div>
-
-                              {/* Taxa Local */}
-                              <div>
-                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Taxa Local (R$)</label>
-                                <Controller
-                                  name={`${fieldName}.localRate`}
-                                  control={control}
-                                  render={({ field: { onChange, value } }) => (
-                                    <input
-                                      type="number" step="0.01" min="0" value={value || ''}
-                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
-                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                                      placeholder="0.00"
-                                    />
-                                  )}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-              {insurances.length === 0 && (
-                <p className="text-sm text-slate-500">Cadastre convênios e locais primeiro.</p>
-              )}
-            </div>
           </div>
 
           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-800">

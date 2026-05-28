@@ -18,34 +18,25 @@ import { BriefcaseMedical } from 'lucide-react';
 
 const insuranceSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  locationIds: z.array(z.string()).min(1, 'Selecione ao menos um local de atendimento'),
 });
 
 type InsuranceForm = z.infer<typeof insuranceSchema>;
 
 export default function InsurancesPage() {
   const [insurances, setInsurances] = useState<Insurance[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<Insurance | null>(null);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<InsuranceForm>({
-    resolver: zodResolver(insuranceSchema),
-    defaultValues: { locationIds: [] }
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<InsuranceForm>({
+    resolver: zodResolver(insuranceSchema)
   });
-
-  const selectedLocationIds = watch('locationIds');
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [insurancesData, locationsData] = await Promise.all([
-        getInsurances(),
-        getLocations()
-      ]);
+      const insurancesData = await getInsurances();
       setInsurances(insurancesData);
-      setLocations(locationsData.filter(loc => loc.active)); // Only active locations for selection
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -61,10 +52,9 @@ export default function InsurancesPage() {
     if (insurance) {
       setEditingInsurance(insurance);
       setValue('name', insurance.name);
-      setValue('locationIds', insurance.locationIds);
     } else {
       setEditingInsurance(null);
-      reset({ name: '', locationIds: [] });
+      reset({ name: '' });
     }
     setIsModalOpen(true);
   };
@@ -80,7 +70,7 @@ export default function InsurancesPage() {
       if (editingInsurance) {
         await updateInsurance(editingInsurance.id, data);
       } else {
-        await addInsurance(data);
+        await addInsurance({ ...data, locationIds: [] });
       }
       closeModal();
       fetchData();
@@ -104,24 +94,6 @@ export default function InsurancesPage() {
 
   const columns = [
     { key: 'name', header: 'Nome' },
-    { 
-      key: 'locationIds', 
-      header: 'Locais Vinculados',
-      render: (item: Insurance) => {
-        const linkedLocations = locations.filter(loc => item.locationIds.includes(loc.id));
-        if (linkedLocations.length === 0) return <span className="text-slate-400 text-sm">Nenhum</span>;
-        
-        return (
-          <div className="flex flex-wrap gap-1">
-            {linkedLocations.map(loc => (
-              <span key={loc.id} className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs border border-blue-100 dark:border-blue-800">
-                {loc.name}
-              </span>
-            ))}
-          </div>
-        );
-      }
-    },
   ];
 
   return (
@@ -171,31 +143,6 @@ export default function InsurancesPage() {
               placeholder="Ex: Unimed Saúde"
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Locais de Atendimento
-            </label>
-            <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
-              {locations.length > 0 ? locations.map((loc) => (
-                <div key={loc.id} className="flex items-center">
-                  <input
-                    {...register('locationIds')}
-                    type="checkbox"
-                    value={loc.id}
-                    id={`loc-${loc.id}`}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-                  />
-                  <label htmlFor={`loc-${loc.id}`} className="ml-2 block text-sm text-slate-900 dark:text-slate-300">
-                    {loc.name}
-                  </label>
-                </div>
-              )) : (
-                <p className="text-sm text-slate-500">Nenhum local ativo encontrado.</p>
-              )}
-            </div>
-            {errors.locationIds && <p className="mt-1 text-sm text-red-500">{errors.locationIds.message}</p>}
           </div>
 
           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-800">

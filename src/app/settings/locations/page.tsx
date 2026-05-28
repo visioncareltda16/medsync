@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -111,6 +112,18 @@ export default function LocationsPage() {
         </span>
       )
     },
+    {
+      key: 'actions',
+      header: 'Regras',
+      render: (item: Location) => (
+        <Link 
+          href={`/settings/locations/${item.id}`}
+          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded border border-indigo-100 dark:border-indigo-800"
+        >
+          Configurar Convênios e Preços
+        </Link>
+      )
+    }
   ];
 
   return (
