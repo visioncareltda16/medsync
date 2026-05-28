@@ -83,10 +83,20 @@ export default function ProceduresPage() {
 
   const onSubmit = async (data: ProcedureForm) => {
     try {
-      const cleanValues = data.values || {};
+      const cleanValues: Record<string, any> = data.values || {};
       Object.keys(cleanValues).forEach(key => {
-        if (cleanValues[key] === undefined || isNaN(cleanValues[key])) {
-          cleanValues[key] = 0;
+        if (!cleanValues[key]) {
+          cleanValues[key] = { baseValue: 0, transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
+        } else {
+          // If old format (number), convert it
+          if (typeof cleanValues[key] === 'number') {
+            cleanValues[key] = { baseValue: cleanValues[key], transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
+          }
+          // Ensure fields exist
+          cleanValues[key].baseValue = isNaN(cleanValues[key].baseValue) ? 0 : Number(cleanValues[key].baseValue);
+          cleanValues[key].transferRate = isNaN(cleanValues[key].transferRate) ? 0 : Number(cleanValues[key].transferRate);
+          cleanValues[key].localRate = isNaN(cleanValues[key].localRate) ? 0 : Number(cleanValues[key].localRate);
+          cleanValues[key].transferType = cleanValues[key].transferType || 'PERCENTAGE';
         }
       });
 
@@ -242,27 +252,81 @@ export default function ProceduresPage() {
                       {linkedLocations.map(loc => {
                         const fieldName = `values.${insurance.id}_${loc.id}` as const;
                         return (
-                          <div key={loc.id} className="flex items-center justify-between text-sm">
-                            <span className="text-slate-600 dark:text-slate-400 pl-2 border-l-2 border-slate-300 dark:border-slate-600">
+                          <div key={loc.id} className="flex flex-col gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md">
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold text-sm border-b border-slate-100 dark:border-slate-800 pb-1">
                               {loc.name}
                             </span>
-                            <div className="relative w-32">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">R$</span>
-                              <Controller
-                                name={fieldName}
-                                control={control}
-                                render={({ field: { onChange, value } }) => (
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={value || ''}
-                                    onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
-                                    className="block w-full pl-8 pr-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="0,00"
-                                  />
-                                )}
-                              />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 mt-1">
+                              {/* Valor Base */}
+                              <div>
+                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Valor Base (R$)</label>
+                                <Controller
+                                  name={`${fieldName}.baseValue`}
+                                  control={control}
+                                  render={({ field: { onChange, value } }) => (
+                                    <input
+                                      type="number" step="0.01" min="0" value={value || ''}
+                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                                      placeholder="0.00"
+                                    />
+                                  )}
+                                />
+                              </div>
+
+                              {/* Tipo de Repasse */}
+                              <div>
+                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Repasse</label>
+                                <Controller
+                                  name={`${fieldName}.transferType`}
+                                  control={control}
+                                  defaultValue="PERCENTAGE"
+                                  render={({ field: { onChange, value } }) => (
+                                    <select
+                                      value={value || 'PERCENTAGE'}
+                                      onChange={onChange}
+                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                                    >
+                                      <option value="PERCENTAGE">Percentual (%)</option>
+                                      <option value="FIXED">Fixo (R$)</option>
+                                    </select>
+                                  )}
+                                />
+                              </div>
+
+                              {/* Taxa de Repasse */}
+                              <div>
+                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Valor Repasse</label>
+                                <Controller
+                                  name={`${fieldName}.transferRate`}
+                                  control={control}
+                                  render={({ field: { onChange, value } }) => (
+                                    <input
+                                      type="number" step="0.01" min="0" value={value || ''}
+                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                                      placeholder="0.00"
+                                    />
+                                  )}
+                                />
+                              </div>
+
+                              {/* Taxa Local */}
+                              <div>
+                                <label className="block text-[10px] font-medium text-slate-500 uppercase">Taxa Local (R$)</label>
+                                <Controller
+                                  name={`${fieldName}.localRate`}
+                                  control={control}
+                                  render={({ field: { onChange, value } }) => (
+                                    <input
+                                      type="number" step="0.01" min="0" value={value || ''}
+                                      onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                      className="block w-full px-2 py-1 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                                      placeholder="0.00"
+                                    />
+                                  )}
+                                />
+                              </div>
                             </div>
                           </div>
                         );

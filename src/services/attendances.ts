@@ -28,7 +28,9 @@ export interface Attendance {
   transferValue: number; // Valor repasse (unidade)
   transferType?: 'PERCENTAGE' | 'FIXED';
   transferRate: number; // Taxa de repasse (%) ou valor fixo
-  realValue: number; // Valor real recebido (unidade)
+  baseValue?: number; // Valor Base do Procedimento
+  localRate?: number; // Taxa Local
+  realValue: number; // transferValue * quantity (ou cálculo exato)
   subtotal: number; // quantidade * transferValue
   status: FinancialStatus;
   receivedDate?: string;

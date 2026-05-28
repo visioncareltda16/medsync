@@ -10,13 +10,20 @@ import {
   orderBy 
 } from 'firebase/firestore';
 
+export interface ProcedureValue {
+  baseValue: number;
+  transferType: 'PERCENTAGE' | 'FIXED';
+  transferRate: number;
+  localRate: number;
+}
+
 export interface Procedure {
   id: string;
   name: string;
   code: string;
   type: 'Ambulatorial' | 'Cirúrgico';
   // Chave no formato: "insuranceId_locationId"
-  values: Record<string, number>;
+  values: Record<string, ProcedureValue>;
 }
 
 const COLLECTION_NAME = 'procedures';

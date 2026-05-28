@@ -23,17 +23,7 @@ const attendanceSchema = z.object({
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
   procedureId: z.string().min(1, 'Procedimento é obrigatório'),
-  quantity: z.number().min(1, 'Quantidade deve ser maior que 0'),
-  transferType: z.enum(['PERCENTAGE', 'FIXED']),
-  transferRate: z.number().min(0, 'Valor não pode ser negativo'),
-}).superRefine((data, ctx) => {
-  if (data.transferType === 'PERCENTAGE' && data.transferRate > 100) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'A taxa deve ser até 100%',
-      path: ['transferRate'],
-    });
-  }
+  quantity: z.number().min(1, 'Quantidade deve ser maior que 0')
 });
 
 type AttendanceForm = z.infer<typeof attendanceSchema>;
@@ -60,15 +50,13 @@ export default function AttendancesPage() {
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AttendanceForm>({
     resolver: zodResolver(attendanceSchema),
-    defaultValues: { quantity: 1, transferRate: 100, transferType: 'PERCENTAGE', date: format(new Date(), 'yyyy-MM-dd') }
+    defaultValues: { quantity: 1, date: format(new Date(), 'yyyy-MM-dd') }
   });
 
   const watchLocationId = watch('locationId');
   const watchInsuranceId = watch('insuranceId');
   const watchProcedureId = watch('procedureId');
   const watchQuantity = watch('quantity') || 1;
-  const watchTransferRate = watch('transferRate') || 0;
-  const watchTransferType = watch('transferType') || 'PERCENTAGE';
 
   const fetchData = async () => {
     try {
@@ -107,22 +95,28 @@ export default function AttendancesPage() {
     return insurances.filter(ins => ins.locationIds.includes(watchLocationId));
   }, [watchLocationId, insurances]);
 
-  // Derived transfer value
-  const currentTransferValue = useMemo(() => {
-    if (!watchLocationId || !watchInsuranceId || !watchProcedureId) return 0;
+  // Derived transfer config
+  const procedureConfig = useMemo(() => {
+    if (!watchLocationId || !watchInsuranceId || !watchProcedureId) return null;
     const proc = procedures.find(p => p.id === watchProcedureId);
-    if (!proc) return 0;
+    if (!proc) return null;
     const key = `${watchInsuranceId}_${watchLocationId}`;
-    return proc.values[key] || 0;
+    return proc.values[key] || null;
   }, [watchLocationId, watchInsuranceId, watchProcedureId, procedures]);
 
   const currentSubtotal = useMemo(() => {
-    if (watchTransferType === 'FIXED') {
-      return watchTransferRate * watchQuantity;
+    if (!procedureConfig) return 0;
+    
+    let gross = 0;
+    if (procedureConfig.transferType === 'FIXED') {
+      gross = procedureConfig.transferRate * watchQuantity;
+    } else {
+      gross = (procedureConfig.baseValue * (procedureConfig.transferRate / 100)) * watchQuantity;
     }
-    const val = currentTransferValue * watchQuantity;
-    return val * (watchTransferRate / 100);
-  }, [currentTransferValue, watchQuantity, watchTransferRate, watchTransferType]);
+    
+    const local = procedureConfig.localRate * watchQuantity;
+    return gross - local;
+  }, [procedureConfig, watchQuantity]);
 
   const openModal = (attendance?: Attendance) => {
     if (attendance) {
@@ -134,16 +128,12 @@ export default function AttendancesPage() {
       setValue('insuranceId', attendance.insuranceId);
       setValue('procedureId', attendance.procedureId);
       setValue('quantity', attendance.quantity);
-      setValue('transferType', attendance.transferType || 'PERCENTAGE');
-      setValue('transferRate', attendance.transferRate);
     } else {
       setEditingAttendance(null);
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
         doctorId: profile?.doctorId ? profile.doctorId : '',
-        quantity: 1, 
-        transferType: 'PERCENTAGE',
-        transferRate: 100 
+        quantity: 1
       });
     }
     setIsModalOpen(true);
@@ -166,12 +156,21 @@ export default function AttendancesPage() {
       return;
     }
 
+    const tType = procedureConfig?.transferType || editingAttendance?.transferType || 'PERCENTAGE';
+    const tRate = procedureConfig?.transferRate || editingAttendance?.transferRate || 0;
+    const bValue = procedureConfig?.baseValue || editingAttendance?.baseValue || 0;
+    const lRate = procedureConfig?.localRate || editingAttendance?.localRate || 0;
+
     const payload: Omit<Attendance, 'id'> = {
       ...data,
       doctorId: finalDoctorId,
       month: format(dateObj, 'yyyy-MM'),
       dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
-      transferValue: currentTransferValue,
+      transferType: tType,
+      transferRate: tRate,
+      baseValue: bValue,
+      localRate: lRate,
+      transferValue: bValue, // Mantém para compatibilidade se necessário
       realValue: currentSubtotal,
       subtotal: currentSubtotal,
       status: editingAttendance ? editingAttendance.status : 'A RECEBER',
@@ -492,23 +491,46 @@ export default function AttendancesPage() {
               {errors.quantity && <p className="mt-1 text-sm text-red-500">{errors.quantity.message}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Repasse</label>
-              <select {...register('transferType')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="PERCENTAGE">Percentual (%)</option>
-                <option value="FIXED">Valor Fixo (R$)</option>
-              </select>
-              {errors.transferType && <p className="mt-1 text-sm text-red-500">{errors.transferType.message}</p>}
+              {/* Configuração Financeira Transparente */}
+              <div className="md:col-span-2 mt-2 border border-blue-100 dark:border-blue-900/30 rounded-lg overflow-hidden bg-blue-50/50 dark:bg-blue-900/10">
+                <div className="bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 border-b border-blue-100 dark:border-blue-900/30">
+                  <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
+                </div>
+                <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Valor Base</span>
+                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
+                      R$ {procedureConfig?.baseValue?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Tipo</span>
+                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
+                      {procedureConfig?.transferType === 'FIXED' ? 'Valor Fixo' : 'Percentual'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Repasse</span>
+                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
+                      {procedureConfig?.transferType === 'FIXED' 
+                        ? `R$ ${procedureConfig?.transferRate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}`
+                        : `${procedureConfig?.transferRate || 0}%`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase">Taxa Local</span>
+                    <span className="font-medium text-sm text-slate-700 dark:text-slate-300 text-red-600 dark:text-red-400">
+                      - R$ {procedureConfig?.localRate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                    </span>
+                  </div>
+                </div>
+                {!procedureConfig && watchProcedureId && (
+                  <p className="px-3 pb-3 text-xs text-amber-600 dark:text-amber-400">
+                    Nenhum valor configurado para este Procedimento neste Local/Convênio.
+                  </p>
+                )}
+              </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                {watchTransferType === 'FIXED' ? 'Valor Fixo (R$)' : 'Taxa de Repasse (%)'}
-              </label>
-              <input type="number" step="any" {...register('transferRate', { valueAsNumber: true })} min="0" className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.transferRate && <p className="mt-1 text-sm text-red-500">{errors.transferRate.message}</p>}
-            </div>
-          </div>
 
           <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 mt-4 flex items-center justify-between">
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Subtotal Previsto:</span>
