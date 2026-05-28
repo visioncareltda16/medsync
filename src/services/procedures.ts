@@ -21,7 +21,7 @@ export interface Procedure {
   id: string;
   name: string;
   code: string;
-  type: 'Ambulatorial' | 'Cirúrgico';
+  type: 'Consulta' | 'Exame' | 'Cirurgia';
   // Chave no formato: "insuranceId_locationId"
   values: Record<string, ProcedureValue>;
 }

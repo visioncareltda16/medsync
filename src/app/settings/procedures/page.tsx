@@ -20,7 +20,7 @@ import { Activity } from 'lucide-react';
 const procedureSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   code: z.string().min(1, 'Código é obrigatório'),
-  type: z.enum(['Ambulatorial', 'Cirúrgico']),
+  type: z.enum(['Consulta', 'Exame', 'Cirurgia']),
 });
 
 type ProcedureForm = z.infer<typeof procedureSchema>;
@@ -35,7 +35,7 @@ export default function ProceduresPage() {
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<ProcedureForm>({
     resolver: zodResolver(procedureSchema),
-    defaultValues: { type: 'Ambulatorial' }
+    defaultValues: { type: 'Consulta' }
   });
 
   const fetchData = async () => {
@@ -59,10 +59,10 @@ export default function ProceduresPage() {
       setEditingProcedure(procedure);
       setValue('name', procedure.name);
       setValue('code', procedure.code);
-      setValue('type', procedure.type || 'Ambulatorial');
+      setValue('type', procedure.type || 'Consulta');
     } else {
       setEditingProcedure(null);
-      reset({ name: '', code: '', type: 'Ambulatorial' });
+      reset({ name: '', code: '', type: 'Consulta' });
     }
     setIsModalOpen(true);
   };
@@ -114,11 +114,13 @@ export default function ProceduresPage() {
       header: 'Classificação',
       render: (item: Procedure) => (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          item.type === 'Cirúrgico' 
+          item.type === 'Cirurgia' 
             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' 
+            : item.type === 'Exame'
+            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
             : 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300'
         }`}>
-          {item.type || 'Ambulatorial'}
+          {item.type || 'Consulta'}
         </span>
       )
     }
@@ -195,8 +197,9 @@ export default function ProceduresPage() {
                 {...register('type')}
                 className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="Ambulatorial">Ambulatorial (Consultas, Exames)</option>
-                <option value="Cirúrgico">Cirúrgico (Cirurgias)</option>
+                <option value="Consulta">Consulta</option>
+                <option value="Exame">Exame</option>
+                <option value="Cirurgia">Cirurgia</option>
               </select>
               {errors.type && <p className="mt-1 text-sm text-red-500">{errors.type.message as any}</p>}
           </div>
