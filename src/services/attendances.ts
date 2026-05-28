@@ -44,7 +44,7 @@ export const getAttendances = async (filters?: {
   locationId?: string;
   status?: FinancialStatus;
 }): Promise<Attendance[]> => {
-  let q = query(collection(db, COLLECTION_NAME), orderBy('date', 'desc'));
+  let q = query(collection(db, COLLECTION_NAME));
 
   if (filters?.month) q = query(q, where('month', '==', filters.month));
   if (filters?.doctorId) q = query(q, where('doctorId', '==', filters.doctorId));
@@ -52,10 +52,17 @@ export const getAttendances = async (filters?: {
   if (filters?.status) q = query(q, where('status', '==', filters.status));
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
+  const data = snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
   } as Attendance));
+  
+  return data.sort((a, b) => {
+    // Sort by date desc (newest first), then by createdAt desc
+    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (dateDiff === 0) return b.createdAt - a.createdAt;
+    return dateDiff;
+  });
 };
 
 export const addAttendance = async (data: Omit<Attendance, 'id'>) => {
