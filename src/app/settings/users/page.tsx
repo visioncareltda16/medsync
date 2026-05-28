@@ -8,6 +8,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { Modal } from '@/components/ui/Modal';
 import { User, getUsers, addUser, updateUser, deleteUser } from '@/services/users';
 import { Doctor, getDoctors } from '@/services/doctors';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Users as UsersIcon, AlertCircle } from 'lucide-react';
 
 const userSchema = z.object({
@@ -25,6 +26,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const { profile, setProfile } = useAuthStore();
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<UserForm>({
     resolver: zodResolver(userSchema),
@@ -59,7 +61,7 @@ export default function UsersPage() {
       setValue('name', user.name);
       setValue('email', user.email);
       setValue('role', user.role);
-      setValue('doctorId', user.doctorId);
+      setValue('doctorId', user.doctorId || '');
     } else {
       setEditingUser(null);
       reset({ name: '', email: '', role: 'MÉDICO', doctorId: '' });
@@ -77,6 +79,9 @@ export default function UsersPage() {
     try {
       if (editingUser) {
         await updateUser(editingUser.id, data);
+        if (profile?.id === editingUser.id) {
+          setProfile({ ...profile, ...data });
+        }
       } else {
         await addUser(data);
       }
@@ -120,7 +125,6 @@ export default function UsersPage() {
       key: 'doctorId',
       header: 'Médico Vinculado',
       render: (item: User) => {
-        if (item.role === 'ADMIN') return <span className="text-slate-400">-</span>;
         const d = doctors.find(doc => doc.id === item.doctorId);
         return d ? <span className="text-sm">{d.name}</span> : <span className="text-red-500 text-sm">Não vinculado</span>;
       }
@@ -199,21 +203,19 @@ export default function UsersPage() {
             </select>
           </div>
 
-          {watchRole === 'MÉDICO' && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Vincular a um Médico Cadastrado</label>
-              <select
-                {...register('doctorId')}
-                className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="">Selecione o Médico...</option>
-                {doctors.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              {errors.doctorId && <p className="mt-1 text-sm text-red-500">{errors.doctorId.message}</p>}
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Vincular a um Médico Cadastrado (Opcional para Admin)</label>
+            <select
+              {...register('doctorId')}
+              className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">Selecione o Médico...</option>
+              {doctors.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+            {errors.doctorId && <p className="mt-1 text-sm text-red-500">{errors.doctorId.message}</p>}
+          </div>
 
           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-800">
             <button

@@ -18,13 +18,22 @@ import { Procedure, getProcedures } from '@/services/procedures';
 
 const attendanceSchema = z.object({
   date: z.string().min(1, 'Data é obrigatória'),
-  doctorId: z.string().min(1, 'Médico é obrigatório'),
+  doctorId: z.string().optional(),
   locationId: z.string().min(1, 'Local é obrigatório'),
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
   procedureId: z.string().min(1, 'Procedimento é obrigatório'),
   quantity: z.number().min(1, 'Quantidade deve ser maior que 0'),
-  transferRate: z.number().min(0).max(100, 'A taxa deve ser até 100%'),
+  transferType: z.enum(['PERCENTAGE', 'FIXED']),
+  transferRate: z.number().min(0, 'Valor não pode ser negativo'),
+}).superRefine((data, ctx) => {
+  if (data.transferType === 'PERCENTAGE' && data.transferRate > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'A taxa deve ser até 100%',
+      path: ['transferRate'],
+    });
+  }
 });
 
 type AttendanceForm = z.infer<typeof attendanceSchema>;
@@ -51,14 +60,15 @@ export default function AttendancesPage() {
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AttendanceForm>({
     resolver: zodResolver(attendanceSchema),
-    defaultValues: { quantity: 1, transferRate: 100, date: format(new Date(), 'yyyy-MM-dd') }
+    defaultValues: { quantity: 1, transferRate: 100, transferType: 'PERCENTAGE', date: format(new Date(), 'yyyy-MM-dd') }
   });
 
   const watchLocationId = watch('locationId');
   const watchInsuranceId = watch('insuranceId');
   const watchProcedureId = watch('procedureId');
   const watchQuantity = watch('quantity') || 1;
-  const watchTransferRate = watch('transferRate') || 100;
+  const watchTransferRate = watch('transferRate') || 0;
+  const watchTransferType = watch('transferType') || 'PERCENTAGE';
 
   const fetchData = async () => {
     try {
@@ -107,9 +117,12 @@ export default function AttendancesPage() {
   }, [watchLocationId, watchInsuranceId, watchProcedureId, procedures]);
 
   const currentSubtotal = useMemo(() => {
+    if (watchTransferType === 'FIXED') {
+      return watchTransferRate * watchQuantity;
+    }
     const val = currentTransferValue * watchQuantity;
     return val * (watchTransferRate / 100);
-  }, [currentTransferValue, watchQuantity, watchTransferRate]);
+  }, [currentTransferValue, watchQuantity, watchTransferRate, watchTransferType]);
 
   const openModal = (attendance?: Attendance) => {
     if (attendance) {
@@ -121,13 +134,15 @@ export default function AttendancesPage() {
       setValue('insuranceId', attendance.insuranceId);
       setValue('procedureId', attendance.procedureId);
       setValue('quantity', attendance.quantity);
+      setValue('transferType', attendance.transferType || 'PERCENTAGE');
       setValue('transferRate', attendance.transferRate);
     } else {
       setEditingAttendance(null);
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
-        doctorId: !isAdmin && profile?.doctorId ? profile.doctorId : '',
+        doctorId: profile?.doctorId ? profile.doctorId : '',
         quantity: 1, 
+        transferType: 'PERCENTAGE',
         transferRate: 100 
       });
     }
@@ -142,8 +157,18 @@ export default function AttendancesPage() {
 
   const onSubmit = async (data: AttendanceForm) => {
     const dateObj = parseISO(data.date);
+    
+    // Ensure doctorId is set for non-admins if not provided
+    const finalDoctorId = data.doctorId || (!isAdmin && profile?.doctorId ? profile.doctorId : '');
+
+    if (!finalDoctorId) {
+      alert('Erro: Médico não identificado. Entre em contato com o suporte.');
+      return;
+    }
+
     const payload: Omit<Attendance, 'id'> = {
       ...data,
+      doctorId: finalDoctorId,
       month: format(dateObj, 'yyyy-MM'),
       dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
       transferValue: currentTransferValue,
@@ -337,7 +362,11 @@ export default function AttendancesPage() {
                               <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                                 R$ {item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </div>
-                              <div className="text-xs text-slate-500">{item.transferRate}% de R$ {item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                              <div className="text-xs text-slate-500">
+                                {item.transferType === 'FIXED' 
+                                  ? `Fixo de R$ ${item.transferRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
+                                  : `${item.transferRate}% de R$ ${item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               {item.status === 'RECEBIDO' ? (
@@ -445,8 +474,19 @@ export default function AttendancesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Taxa de Repasse (%)</label>
-              <input type="number" {...register('transferRate', { valueAsNumber: true })} min="0" max="100" className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Repasse</label>
+              <select {...register('transferType')} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="PERCENTAGE">Percentual (%)</option>
+                <option value="FIXED">Valor Fixo (R$)</option>
+              </select>
+              {errors.transferType && <p className="mt-1 text-sm text-red-500">{errors.transferType.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {watchTransferType === 'FIXED' ? 'Valor Fixo (R$)' : 'Taxa de Repasse (%)'}
+              </label>
+              <input type="number" step="any" {...register('transferRate', { valueAsNumber: true })} min="0" className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               {errors.transferRate && <p className="mt-1 text-sm text-red-500">{errors.transferRate.message}</p>}
             </div>
           </div>

@@ -26,7 +26,8 @@ export interface Attendance {
   insuranceId: string;
   quantity: number;
   transferValue: number; // Valor repasse (unidade)
-  transferRate: number; // Taxa de repasse (%)
+  transferType?: 'PERCENTAGE' | 'FIXED';
+  transferRate: number; // Taxa de repasse (%) ou valor fixo
   realValue: number; // Valor real recebido (unidade)
   subtotal: number; // quantidade * transferValue
   status: FinancialStatus;
