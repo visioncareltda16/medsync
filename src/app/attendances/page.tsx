@@ -50,6 +50,24 @@ export default function AttendancesPage() {
   const [filterLocation, setFilterLocation] = useState('');
   const [filterStatus, setFilterStatus] = useState<'A RECEBER' | 'RECEBIDO' | ''>('');
 
+  // Sorting
+  const [sortField, setSortField] = useState<string>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const renderSortIcon = (field: string) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+  };
+
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AttendanceForm>({
     resolver: zodResolver(attendanceSchema),
     defaultValues: { quantity: 1, date: format(new Date(), 'yyyy-MM-dd') }
@@ -269,8 +287,32 @@ export default function AttendancesPage() {
       groups[att.locationId].subtotal += att.subtotal;
     });
 
-    return Object.values(groups).sort((a, b) => (a.location?.name || '').localeCompare(b.location?.name || ''));
-  }, [attendances, locations]);
+    const sortedGroups = Object.values(groups).sort((a, b) => (a.location?.name || '').localeCompare(b.location?.name || ''));
+
+    sortedGroups.forEach(group => {
+      group.items.sort((a, b) => {
+        let valA: any = a[sortField as keyof Attendance];
+        let valB: any = b[sortField as keyof Attendance];
+
+        if (sortField === 'doctorName') {
+          valA = doctors.find(d => d.id === a.doctorId)?.name || '';
+          valB = doctors.find(d => d.id === b.doctorId)?.name || '';
+        } else if (sortField === 'patientName') {
+          valA = a.patientName;
+          valB = b.patientName;
+        } else if (sortField === 'insuranceName') {
+          valA = insurances.find(i => i.id === a.insuranceId)?.name || '';
+          valB = insurances.find(i => i.id === b.insuranceId)?.name || '';
+        }
+
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    });
+
+    return sortedGroups;
+  }, [attendances, locations, doctors, insurances, sortField, sortDirection]);
 
   const totalGeral = groupedAttendances.reduce((acc, curr) => acc + curr.subtotal, 0);
 
@@ -374,17 +416,17 @@ export default function AttendancesPage() {
                     <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                       <thead className="bg-slate-50/50 dark:bg-slate-900">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Data</th>
+                          <th onClick={() => handleSort('date')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Data{renderSortIcon('date')}</th>
                           {isAdmin && (
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Médico</th>
+                            <th onClick={() => handleSort('doctorName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Médico{renderSortIcon('doctorName')}</th>
                           )}
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Paciente/Proced.</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Convênio</th>
-                          <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Qtd</th>
-                          <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Valor Repasse</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                          <th onClick={() => handleSort('patientName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Paciente/Proced.{renderSortIcon('patientName')}</th>
+                          <th onClick={() => handleSort('insuranceName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Convênio{renderSortIcon('insuranceName')}</th>
+                          <th onClick={() => handleSort('quantity')} className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Qtd{renderSortIcon('quantity')}</th>
+                          <th onClick={() => handleSort('subtotal')} className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Valor Repasse{renderSortIcon('subtotal')}</th>
+                          <th onClick={() => handleSort('status')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Status{renderSortIcon('status')}</th>
                           {isAdmin && (
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Lançado Por</th>
+                            <th onClick={() => handleSort('createdBy')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Lançado Por{renderSortIcon('createdBy')}</th>
                           )}
                           <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
                         </tr>
