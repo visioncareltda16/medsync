@@ -583,25 +583,25 @@ export default function AttendancesPage() {
                   </div>
                   <div className="max-h-40 overflow-y-auto">
                     {selectedConfigs.map(({ proc, config, subtotal }) => (
-                      <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
-                        <div className="md:col-span-2">
+                      <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                        <div className="w-full sm:w-1/3 sm:min-w-[120px]">
                           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={proc.name}>{proc.name}</span>
                         </div>
-                        <div>
-                          <span className="block text-[10px] text-slate-500 uppercase">Base/Repasse</span>
-                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300">
+                        <div className="flex-1">
+                          <span className="block text-[9px] text-slate-500 uppercase">Base/Repasse</span>
+                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {showValues ? `R$ ${config.baseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
                           </span>
                         </div>
-                        <div>
-                          <span className="block text-[10px] text-slate-500 uppercase">Taxa Local</span>
-                          <span className="font-medium text-xs text-red-600 dark:text-red-400">
+                        <div className="flex-1">
+                          <span className="block text-[9px] text-slate-500 uppercase">Taxa Local</span>
+                          <span className="font-medium text-xs text-red-600 dark:text-red-400 whitespace-nowrap">
                             {showValues ? `- R$ ${config.localRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '- R$ ****'}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="block text-[10px] text-slate-500 uppercase">Líquido</span>
-                          <span className="font-bold text-xs text-blue-700 dark:text-blue-400">
+                          <span className="block text-[9px] text-slate-500 uppercase">Líquido</span>
+                          <span className="font-bold text-xs text-blue-700 dark:text-blue-400 whitespace-nowrap">
                             {showValues ? `R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                           </span>
                         </div>
