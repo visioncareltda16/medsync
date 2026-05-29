@@ -11,21 +11,21 @@ import { Modal } from '@/components/ui/Modal';
 
 const TransferTypeToggle = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => {
   return (
-    <div className="flex bg-slate-200/50 dark:bg-slate-800/80 rounded-lg p-1 relative w-full items-center shadow-inner">
+    <div className="flex bg-slate-200/80 dark:bg-slate-900 rounded-lg p-1 relative w-full items-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] ring-1 ring-slate-200/50 dark:ring-slate-800">
       <div 
-        className={`absolute inset-y-1 w-[calc(33.33%-2px)] rounded-md shadow-sm transition-all duration-300 ease-in-out ${
-          value === 'PERCENTAGE' ? 'left-1 bg-orange-100 dark:bg-orange-900/60 border-orange-200 dark:border-orange-800' :
-          value === 'VARIABLE' ? 'left-[33.33%] bg-green-100 dark:bg-green-900/60 border-green-200 dark:border-green-800' :
-          'left-[calc(66.66%-2px)] bg-purple-100 dark:bg-purple-900/60 border-purple-200 dark:border-purple-800'
-        } border`} 
+        className={`absolute inset-y-1 w-[calc(33.33%-2px)] rounded-md shadow-md transition-all duration-300 ease-in-out ${
+          value === 'PERCENTAGE' ? 'left-1 bg-gradient-to-b from-orange-50 to-orange-100 dark:from-orange-900/80 dark:to-orange-900/40 border-b-2 border-orange-300 dark:border-orange-700' :
+          (!value || value === 'VARIABLE') ? 'left-[33.33%] bg-gradient-to-b from-green-50 to-green-100 dark:from-green-900/80 dark:to-green-900/40 border-b-2 border-green-300 dark:border-green-700' :
+          'left-[calc(66.66%-2px)] bg-gradient-to-b from-purple-50 to-purple-100 dark:from-purple-900/80 dark:to-purple-900/40 border-b-2 border-purple-300 dark:border-purple-700'
+        } border-x border-t border-slate-200/50 dark:border-slate-700/50`} 
       />
-      <button type="button" onClick={() => onChange('PERCENTAGE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'PERCENTAGE' || !value ? 'text-orange-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+      <button type="button" onClick={() => onChange('PERCENTAGE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors drop-shadow-sm ${value === 'PERCENTAGE' ? 'text-orange-700 dark:text-orange-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-400'}`}>
         %
       </button>
-      <button type="button" onClick={() => onChange('VARIABLE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'VARIABLE' ? 'text-green-700 dark:text-green-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+      <button type="button" onClick={() => onChange('VARIABLE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors drop-shadow-sm ${(!value || value === 'VARIABLE') ? 'text-green-700 dark:text-green-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-400'}`}>
         Var
       </button>
-      <button type="button" onClick={() => onChange('FIXED')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'FIXED' ? 'text-purple-700 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+      <button type="button" onClick={() => onChange('FIXED')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors drop-shadow-sm ${value === 'FIXED' ? 'text-purple-700 dark:text-purple-300' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-400'}`}>
         Fixo
       </button>
     </div>
@@ -89,7 +89,7 @@ export default function LocationSettingsPage() {
       procedures.forEach(p => {
         const key = `${selectedInsuranceId}_${locationId}`;
         const val = p.values?.[key];
-        newEditedValues[p.id] = val ? { ...val } : { baseValue: 0, transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
+        newEditedValues[p.id] = val ? { ...val } : { baseValue: 0, transferType: 'VARIABLE', transferRate: 0, localRate: 0 };
       });
       setEditedValues(newEditedValues);
     }
@@ -267,7 +267,7 @@ export default function LocationSettingsPage() {
                   </thead>
                   <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
                     {procedures.map(proc => {
-                      const vals = editedValues[proc.id] || { baseValue: 0, transferType: 'PERCENTAGE', transferRate: 0, localRate: 0 };
+                      const vals = editedValues[proc.id] || { baseValue: 0, transferType: 'VARIABLE', transferRate: 0, localRate: 0 };
                       return (
                         <tr key={proc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-300">
@@ -292,7 +292,7 @@ export default function LocationSettingsPage() {
                           </td>
                           <td className="px-4 py-3 w-44">
                             <TransferTypeToggle 
-                              value={vals.transferType || 'PERCENTAGE'} 
+                              value={vals.transferType || 'VARIABLE'} 
                               onChange={(v) => handleValueChange(proc.id, 'transferType', v)} 
                             />
                           </td>
@@ -302,13 +302,15 @@ export default function LocationSettingsPage() {
                               value={vals.transferRate || ''}
                               onChange={(e) => handleValueChange(proc.id, 'transferRate', e.target.value ? parseFloat(e.target.value) : 0)}
                               className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors relative z-10 ${
-                                (!vals.transferType || vals.transferType === 'PERCENTAGE') ? 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400 pl-6' :
+                                vals.transferType === 'PERCENTAGE' ? 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400 pl-6' :
                                 vals.transferType === 'FIXED' ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400 pl-8' :
+                                (!vals.transferType || vals.transferType === 'VARIABLE') ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 pl-6' :
                                 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
                               }`}
                             />
-                            {(!vals.transferType || vals.transferType === 'PERCENTAGE') && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-orange-500 font-bold text-sm z-20 pointer-events-none">%</span>}
+                            {vals.transferType === 'PERCENTAGE' && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-orange-500 font-bold text-sm z-20 pointer-events-none">%</span>}
                             {vals.transferType === 'FIXED' && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-purple-500 font-bold text-sm z-20 pointer-events-none">R$</span>}
+                            {(!vals.transferType || vals.transferType === 'VARIABLE') && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-green-500 font-bold text-sm z-20 pointer-events-none">%</span>}
                           </td>
                           <td className="px-4 py-3">
                             <input
