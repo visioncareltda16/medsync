@@ -9,6 +9,29 @@ import { Procedure, getProcedures, updateProcedure } from '@/services/procedures
 import { Building2, ArrowLeft, Settings2, Plus, Check, Save } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 
+const TransferTypeToggle = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => {
+  return (
+    <div className="flex bg-slate-200/50 dark:bg-slate-800/80 rounded-lg p-1 relative w-full items-center shadow-inner">
+      <div 
+        className={`absolute inset-y-1 w-[calc(33.33%-2px)] rounded-md shadow-sm transition-all duration-300 ease-in-out ${
+          value === 'PERCENTAGE' ? 'left-1 bg-orange-100 dark:bg-orange-900/60 border-orange-200 dark:border-orange-800' :
+          value === 'VARIABLE' ? 'left-[33.33%] bg-green-100 dark:bg-green-900/60 border-green-200 dark:border-green-800' :
+          'left-[calc(66.66%-2px)] bg-purple-100 dark:bg-purple-900/60 border-purple-200 dark:border-purple-800'
+        } border`} 
+      />
+      <button type="button" onClick={() => onChange('PERCENTAGE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'PERCENTAGE' || !value ? 'text-orange-700 dark:text-orange-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+        %
+      </button>
+      <button type="button" onClick={() => onChange('VARIABLE')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'VARIABLE' ? 'text-green-700 dark:text-green-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+        Var
+      </button>
+      <button type="button" onClick={() => onChange('FIXED')} className={`relative w-1/3 text-[11px] font-bold py-1.5 z-10 transition-colors ${value === 'FIXED' ? 'text-purple-700 dark:text-purple-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
+        Fixo
+      </button>
+    </div>
+  );
+};
+
 export default function LocationSettingsPage() {
   const params = useParams();
   const router = useRouter();
@@ -253,29 +276,39 @@ export default function LocationSettingsPage() {
                           </td>
                           <td className="px-4 py-3">
                             <input
-                              type="number" step="0.01" min="0"
-                              value={vals.baseValue || ''}
+                              type={vals.transferType === 'VARIABLE' ? "text" : "number"}
+                              step={vals.transferType === 'VARIABLE' ? undefined : "0.01"}
+                              min="0"
+                              disabled={vals.transferType === 'VARIABLE'}
+                              value={vals.transferType === 'VARIABLE' ? '' : (vals.baseValue || '')}
+                              placeholder={vals.transferType === 'VARIABLE' ? 'No Lançamento' : ''}
                               onChange={(e) => handleValueChange(proc.id, 'baseValue', e.target.value ? parseFloat(e.target.value) : 0)}
-                              className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                              className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors ${
+                                vals.transferType === 'VARIABLE' 
+                                  ? 'bg-green-50 border-green-200 text-green-700 placeholder:text-green-600/70 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:placeholder:text-green-700 cursor-not-allowed'
+                                  : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                              }`}
                             />
                           </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={vals.transferType || 'PERCENTAGE'}
-                              onChange={(e) => handleValueChange(proc.id, 'transferType', e.target.value)}
-                              className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                            >
-                              <option value="PERCENTAGE">Percentual (%)</option>
-                              <option value="FIXED">Fixo (R$)</option>
-                            </select>
+                          <td className="px-4 py-3 w-44">
+                            <TransferTypeToggle 
+                              value={vals.transferType || 'PERCENTAGE'} 
+                              onChange={(v) => handleValueChange(proc.id, 'transferType', v)} 
+                            />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 relative">
                             <input
                               type="number" step="0.01" min="0"
                               value={vals.transferRate || ''}
                               onChange={(e) => handleValueChange(proc.id, 'transferRate', e.target.value ? parseFloat(e.target.value) : 0)}
-                              className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                              className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors relative z-10 ${
+                                (!vals.transferType || vals.transferType === 'PERCENTAGE') ? 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400 pl-6' :
+                                vals.transferType === 'FIXED' ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400 pl-8' :
+                                'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                              }`}
                             />
+                            {(!vals.transferType || vals.transferType === 'PERCENTAGE') && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-orange-500 font-bold text-sm z-20 pointer-events-none">%</span>}
+                            {vals.transferType === 'FIXED' && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-purple-500 font-bold text-sm z-20 pointer-events-none">R$</span>}
                           </td>
                           <td className="px-4 py-3">
                             <input

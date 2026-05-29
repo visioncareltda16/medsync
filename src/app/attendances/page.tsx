@@ -43,6 +43,7 @@ export default function AttendancesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
+  const [variableBaseValues, setVariableBaseValues] = useState<Record<string, number>>({});
 
   // Filters
   const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -127,17 +128,19 @@ export default function AttendancesPage() {
       if (!config) return null;
       
       let gross = 0;
+      let effectiveBaseValue = config.transferType === 'VARIABLE' ? (variableBaseValues[procId] || 0) : config.baseValue;
+
       if (config.transferType === 'FIXED') {
         gross = config.transferRate * watchQuantity;
       } else {
-        gross = (config.baseValue * (config.transferRate / 100)) * watchQuantity;
+        gross = (effectiveBaseValue * (config.transferRate / 100)) * watchQuantity;
       }
       const local = config.localRate * watchQuantity;
       const subtotal = gross - local;
 
-      return { proc, config, subtotal };
-    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number }>;
-  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantity]);
+      return { proc, config, subtotal, effectiveBaseValue };
+    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, effectiveBaseValue: number }>;
+  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantity, variableBaseValues]);
 
   const currentSubtotal = useMemo(() => {
     return selectedConfigs.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -146,6 +149,7 @@ export default function AttendancesPage() {
   const openModal = (attendance?: Attendance) => {
     if (attendance) {
       setEditingAttendance(attendance);
+      setVariableBaseValues({ [attendance.procedureId]: attendance.baseValue || 0 });
       setValue('date', attendance.date);
       setValue('doctorId', attendance.doctorId);
       setValue('locationId', attendance.locationId);
@@ -155,6 +159,7 @@ export default function AttendancesPage() {
       setValue('quantity', attendance.quantity);
     } else {
       setEditingAttendance(null);
+      setVariableBaseValues({});
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
         doctorId: profile?.doctorId ? profile.doctorId : '',
@@ -168,6 +173,7 @@ export default function AttendancesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingAttendance(null);
+    setVariableBaseValues({});
     reset();
   };
 
@@ -187,7 +193,7 @@ export default function AttendancesPage() {
         const selConfig = selectedConfigs[0];
         const tType = selConfig?.config?.transferType || editingAttendance.transferType || 'PERCENTAGE';
         const tRate = selConfig?.config?.transferRate || editingAttendance.transferRate || 0;
-        const bValue = selConfig?.config?.baseValue || editingAttendance.baseValue || 0;
+        const bValue = selConfig?.effectiveBaseValue || editingAttendance.baseValue || 0;
         const lRate = selConfig?.config?.localRate || editingAttendance.localRate || 0;
 
         const payload: any = {
@@ -216,7 +222,7 @@ export default function AttendancesPage() {
           const sel = selectedConfigs.find(s => s.proc.id === procId);
           const tType = sel?.config?.transferType || 'PERCENTAGE';
           const tRate = sel?.config?.transferRate || 0;
-          const bValue = sel?.config?.baseValue || 0;
+          const bValue = sel?.effectiveBaseValue || 0;
           const lRate = sel?.config?.localRate || 0;
           const subtotal = sel?.subtotal || 0;
 
@@ -624,16 +630,30 @@ export default function AttendancesPage() {
                     <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
                   </div>
                   <div className="max-h-40 overflow-y-auto">
-                    {selectedConfigs.map(({ proc, config, subtotal }) => (
+                    {selectedConfigs.map(({ proc, config, subtotal, effectiveBaseValue }) => (
                       <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                         <div className="w-full sm:w-1/3 sm:min-w-[120px]">
                           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={proc.name}>{proc.name}</span>
                         </div>
                         <div className="flex-1">
                           <span className="block text-[9px] text-slate-500 uppercase">Base/Repasse</span>
-                          <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                            {showValues ? `R$ ${config.baseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
-                          </span>
+                          {config.transferType === 'VARIABLE' ? (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-xs text-slate-500">R$</span>
+                              <input 
+                                type="number" step="0.01" min="0"
+                                value={variableBaseValues[proc.id] || ''}
+                                onChange={(e) => setVariableBaseValues(prev => ({ ...prev, [proc.id]: e.target.value ? parseFloat(e.target.value) : 0 }))}
+                                className="w-16 px-1 py-0.5 text-xs border border-green-300 bg-green-50 text-green-700 rounded outline-none focus:ring-1 focus:ring-green-500 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
+                                placeholder="0.00"
+                              />
+                              <span className="text-xs text-slate-500">/ {config.transferRate}%</span>
+                            </div>
+                          ) : (
+                            <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                              {showValues ? `R$ ${effectiveBaseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
+                            </span>
+                          )}
                         </div>
                         <div className="flex-1">
                           <span className="block text-[9px] text-slate-500 uppercase">Taxa Local</span>

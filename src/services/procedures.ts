@@ -12,7 +12,7 @@ import {
 
 export interface ProcedureValue {
   baseValue: number;
-  transferType: 'PERCENTAGE' | 'FIXED';
+  transferType: 'PERCENTAGE' | 'FIXED' | 'VARIABLE';
   transferRate: number;
   localRate: number;
 }
