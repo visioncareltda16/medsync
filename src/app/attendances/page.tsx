@@ -44,6 +44,7 @@ export default function AttendancesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
   const [variableBaseValues, setVariableBaseValues] = useState<Record<string, number>>({});
+  const [showAllProcedures, setShowAllProcedures] = useState(false);
 
   // Filters
   const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -150,6 +151,7 @@ export default function AttendancesPage() {
     if (attendance) {
       setEditingAttendance(attendance);
       setVariableBaseValues({ [attendance.procedureId]: attendance.baseValue || 0 });
+      setShowAllProcedures(true);
       setValue('date', attendance.date);
       setValue('doctorId', attendance.doctorId);
       setValue('locationId', attendance.locationId);
@@ -160,6 +162,7 @@ export default function AttendancesPage() {
     } else {
       setEditingAttendance(null);
       setVariableBaseValues({});
+      setShowAllProcedures(false);
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
         doctorId: profile?.doctorId ? profile.doctorId : '',
@@ -174,6 +177,7 @@ export default function AttendancesPage() {
     setIsModalOpen(false);
     setEditingAttendance(null);
     setVariableBaseValues({});
+    setShowAllProcedures(false);
     reset();
   };
 
@@ -572,18 +576,39 @@ export default function AttendancesPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">
-                Procedimentos {editingAttendance && <span className="text-amber-500 font-normal">(Edição restrita)</span>}
-              </label>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300">
+                  Procedimentos {editingAttendance && <span className="text-amber-500 font-normal">(Edição restrita)</span>}
+                </label>
+                {watchLocationId && watchInsuranceId && !editingAttendance && (
+                  <label className="flex items-center space-x-1.5 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      checked={showAllProcedures} 
+                      onChange={(e) => setShowAllProcedures(e.target.checked)} 
+                      className="h-3 w-3 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                    />
+                    <span className="text-[10px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                      Mostrar todos (incluir não configurados)
+                    </span>
+                  </label>
+                )}
+              </div>
               <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-1">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
                   {['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial', 'Outros'].map(typeGroup => {
                     const groupProcs = procedures.filter(p => {
                       if (typeGroup === 'Outros') {
-                        return !['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial'].includes(p.type);
+                        if (['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial'].includes(p.type)) return false;
+                      } else if (p.type !== typeGroup) {
+                        return false;
                       }
-                      return p.type === typeGroup;
-                    });
+                      
+                      if (showAllProcedures || editingAttendance || !watchLocationId || !watchInsuranceId) return true;
+                      
+                      const key = `${watchInsuranceId}_${watchLocationId}`;
+                      return !!p.values?.[key];
+                    }).sort((a, b) => a.name.localeCompare(b.name));
 
                     if (groupProcs.length === 0) return null;
 
