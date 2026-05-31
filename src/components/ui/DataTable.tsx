@@ -5,6 +5,7 @@ interface Column<T> {
   key: string;
   header: string;
   render?: (item: T) => React.ReactNode;
+  className?: string;
 }
 
 interface DataTableProps<T> {
@@ -122,7 +123,7 @@ export function DataTable<T extends { id: string }>({
               filteredData.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   {columns.map((column) => (
-                    <td key={`${item.id}-${column.key}`} className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
+                    <td key={`${item.id}-${column.key}`} className={`px-6 py-4 text-sm text-slate-700 dark:text-slate-300 ${column.className || 'whitespace-nowrap'}`}>
                       {column.render ? column.render(item) : String((item as any)[column.key] ?? '-')}
                     </td>
                   ))}
