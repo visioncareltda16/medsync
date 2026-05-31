@@ -125,13 +125,29 @@ export default function LocationSettingsPage() {
   };
 
   const handleValueChange = (procId: string, field: string, value: any) => {
-    setEditedValues(prev => ({
-      ...prev,
-      [procId]: {
-        ...prev[procId],
-        [field]: value
+    setEditedValues(prev => {
+      const current = prev[procId] || { baseValue: 0, transferType: 'VARIABLE', transferRate: 0, localRate: 0 };
+      const next = { ...current, [field]: value };
+      
+      // Auto-calculate localRate
+      if (field === 'baseValue' || field === 'transferRate' || field === 'transferType') {
+        const base = next.baseValue || 0;
+        const rate = next.transferRate || 0;
+        
+        if (next.transferType === 'FIXED') {
+          next.localRate = Math.max(0, base - rate);
+        } else if (next.transferType === 'PERCENTAGE') {
+          next.localRate = Math.max(0, base - (base * rate / 100));
+        } else {
+          next.localRate = 0;
+        }
       }
-    }));
+
+      return {
+        ...prev,
+        [procId]: next
+      };
+    });
   };
 
   const handleSavePrices = async () => {
@@ -287,9 +303,9 @@ export default function LocationSettingsPage() {
                   <thead className="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 shadow-sm">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Procedimento</th>
+                      {showColumns.baseValue && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Valor Base (R$)</th>}
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Tipo Repasse</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Repasse</th>
-                      {showColumns.baseValue && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Valor Base (R$)</th>}
                       {showColumns.localRate && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Taxa Local (R$)</th>}
                     </tr>
                   </thead>
@@ -302,6 +318,24 @@ export default function LocationSettingsPage() {
                             <div className="font-medium">{proc.name}</div>
                             <div className="text-xs text-slate-500">{proc.code} • {proc.type}</div>
                           </td>
+                          {showColumns.baseValue && (
+                            <td className="px-4 py-3">
+                              <input
+                                type={vals.transferType === 'VARIABLE' ? "text" : "number"}
+                                step={vals.transferType === 'VARIABLE' ? undefined : "0.01"}
+                                min="0"
+                                disabled={vals.transferType === 'VARIABLE'}
+                                value={vals.transferType === 'VARIABLE' ? '' : (vals.baseValue || '')}
+                                placeholder={vals.transferType === 'VARIABLE' ? 'No Lançamento' : ''}
+                                onChange={(e) => handleValueChange(proc.id, 'baseValue', e.target.value ? parseFloat(e.target.value) : 0)}
+                                className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors ${
+                                  vals.transferType === 'VARIABLE' 
+                                    ? 'bg-green-50 border-green-200 text-green-700 placeholder:text-green-600/70 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:placeholder:text-green-700 cursor-not-allowed'
+                                    : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                                }`}
+                              />
+                            </td>
+                          )}
                           <td className="px-4 py-3 w-44">
                             <TransferTypeToggle 
                               value={vals.transferType || 'VARIABLE'} 
@@ -324,31 +358,13 @@ export default function LocationSettingsPage() {
                             {vals.transferType === 'FIXED' && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-purple-500 font-bold text-sm z-20 pointer-events-none">R$</span>}
                             {(!vals.transferType || vals.transferType === 'VARIABLE') && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-green-500 font-bold text-sm z-20 pointer-events-none">%</span>}
                           </td>
-                          {showColumns.baseValue && (
-                            <td className="px-4 py-3">
-                              <input
-                                type={vals.transferType === 'VARIABLE' ? "text" : "number"}
-                                step={vals.transferType === 'VARIABLE' ? undefined : "0.01"}
-                                min="0"
-                                disabled={vals.transferType === 'VARIABLE'}
-                                value={vals.transferType === 'VARIABLE' ? '' : (vals.baseValue || '')}
-                                placeholder={vals.transferType === 'VARIABLE' ? 'No Lançamento' : ''}
-                                onChange={(e) => handleValueChange(proc.id, 'baseValue', e.target.value ? parseFloat(e.target.value) : 0)}
-                                className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors ${
-                                  vals.transferType === 'VARIABLE' 
-                                    ? 'bg-green-50 border-green-200 text-green-700 placeholder:text-green-600/70 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:placeholder:text-green-700 cursor-not-allowed'
-                                    : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
-                                }`}
-                              />
-                            </td>
-                          )}
                           {showColumns.localRate && (
                             <td className="px-4 py-3">
                               <input
                                 type="number" step="0.01" min="0"
                                 value={vals.localRate || ''}
-                                onChange={(e) => handleValueChange(proc.id, 'localRate', e.target.value ? parseFloat(e.target.value) : 0)}
-                                className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                                disabled
+                                className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-100 dark:bg-slate-800/80 text-slate-500 cursor-not-allowed"
                               />
                             </td>
                           )}

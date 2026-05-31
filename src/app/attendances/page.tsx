@@ -591,34 +591,43 @@ export default function AttendancesPage() {
                 <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300">
                   Procedimentos
                 </label>
-                {watchLocationId && watchInsuranceId && !editingAttendance && (
-                  <label className="flex items-center space-x-1.5 cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={showAllProcedures} 
-                      onChange={(e) => setShowAllProcedures(e.target.checked)} 
-                      className="h-3 w-3 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                    />
-                    <span className="text-[10px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-                      Mostrar todos (incluir não configurados)
-                    </span>
-                  </label>
+                {watchLocationId && watchInsuranceId && !editingAttendance && !showAllProcedures && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowAllProcedures(true)}
+                    className="text-[11px] font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                  >
+                    + Incluir procedimento não configurado
+                  </button>
+                )}
+                {watchLocationId && watchInsuranceId && !editingAttendance && showAllProcedures && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowAllProcedures(false)}
+                    className="text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition-colors"
+                  >
+                    Ocultar não configurados
+                  </button>
                 )}
               </div>
               <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 p-1">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
-                  {['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial', 'Outros'].map(typeGroup => {
-                    const groupProcs = procedures.filter(p => {
-                      if (typeGroup === 'Outros') {
-                        if (['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial'].includes(p.type)) return false;
-                      } else if (p.type !== typeGroup) {
-                        return false;
-                      }
-                      
-                      if (showAllProcedures || editingAttendance || !watchLocationId || !watchInsuranceId) return true;
-                      
-                      const key = `${watchInsuranceId}_${watchLocationId}`;
-                      return !!p.values?.[key];
+                {(!watchLocationId || !watchInsuranceId) ? (
+                  <p className="text-xs text-slate-500 p-4 text-center">Selecione o Local de Atendimento e o Convênio para ver os procedimentos.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
+                    {['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial', 'Outros'].map(typeGroup => {
+                      const groupProcs = procedures.filter(p => {
+                        if (typeGroup === 'Outros') {
+                          if (['Consulta', 'Exame', 'Cirurgia', 'Ambulatorial'].includes(p.type)) return false;
+                        } else if (p.type !== typeGroup) {
+                          return false;
+                        }
+                        
+                        if (showAllProcedures || editingAttendance) return true;
+                        
+                        const key = `${watchInsuranceId}_${watchLocationId}`;
+                        const val = p.values?.[key];
+                        return val ? (val.baseValue > 0 || val.transferRate > 0 || val.localRate > 0) : false;
                     }).sort((a, b) => a.name.localeCompare(b.name));
 
                     if (groupProcs.length === 0) return null;
@@ -651,8 +660,9 @@ export default function AttendancesPage() {
                     );
                   })}
                 </div>
-                {procedures.length === 0 && (
-                  <p className="text-xs text-slate-500 p-2">Nenhum procedimento encontrado.</p>
+                )}
+                {watchLocationId && watchInsuranceId && procedures.length === 0 && (
+                  <p className="text-xs text-slate-500 p-2 text-center">Nenhum procedimento encontrado para este convênio.</p>
                 )}
               </div>
               {errors.procedureIds && <p className="mt-0.5 text-xs text-red-500">{errors.procedureIds.message as string}</p>}
