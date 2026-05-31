@@ -45,6 +45,7 @@ export default function AttendancesPage() {
   const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
   const [variableBaseValues, setVariableBaseValues] = useState<Record<string, number>>({});
   const [showAllProcedures, setShowAllProcedures] = useState(false);
+  const [isRulesExpanded, setIsRulesExpanded] = useState(true);
 
   // Filters
   const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -660,10 +661,17 @@ export default function AttendancesPage() {
               {/* Configuração Financeira Transparente */}
               {selectedConfigs.length > 0 && (
                 <div className="md:col-span-2 mt-2 border border-blue-100 dark:border-blue-900/30 rounded-lg overflow-hidden bg-blue-50/50 dark:bg-blue-900/10">
-                  <div className="bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 border-b border-blue-100 dark:border-blue-900/30">
+                  <div 
+                    className="bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 border-b border-blue-100 dark:border-blue-900/30 flex justify-between items-center cursor-pointer select-none"
+                    onClick={() => setIsRulesExpanded(!isRulesExpanded)}
+                  >
                     <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
+                    <span className="text-blue-600 dark:text-blue-400 text-xs font-medium">
+                      {isRulesExpanded ? 'Recolher' : 'Expandir'}
+                    </span>
                   </div>
-                  <div className="max-h-40 overflow-y-auto">
+                  {isRulesExpanded && (
+                    <div className="max-h-40 overflow-y-auto">
                     {selectedConfigs.map(({ proc, config, subtotal, local, effectiveBaseValue }) => (
                       <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                         <div className="w-full sm:w-1/3 sm:min-w-[120px]">
@@ -704,6 +712,7 @@ export default function AttendancesPage() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )}
             </div>

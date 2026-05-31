@@ -36,6 +36,13 @@ export default function LocationsPage() {
     defaultValues: { active: true }
   });
 
+  const [showColumns, setShowColumns] = useState({
+    name: true,
+    address: true,
+    phone: true,
+    active: true
+  });
+
   const fetchLocations = async () => {
     try {
       setLoading(true);
@@ -100,10 +107,22 @@ export default function LocationsPage() {
   };
 
   const columns = [
-    { key: 'name', header: 'Nome' },
-    { key: 'address', header: 'Endereço' },
-    { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
-    { 
+    {
+      key: 'actions',
+      header: 'Regras',
+      render: (item: Location) => (
+        <Link 
+          href={`/settings/locations/${item.id}`}
+          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded border border-indigo-100 dark:border-indigo-800 whitespace-nowrap"
+        >
+          Configurar Convênios e Preços
+        </Link>
+      )
+    },
+    showColumns.name && { key: 'name', header: 'Nome' },
+    showColumns.address && { key: 'address', header: 'Endereço' },
+    showColumns.phone && { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
+    showColumns.active && { 
       key: 'active', 
       header: 'Status',
       render: (item: Location) => (
@@ -111,24 +130,12 @@ export default function LocationsPage() {
           {item.active ? 'Ativo' : 'Inativo'}
         </span>
       )
-    },
-    {
-      key: 'actions',
-      header: 'Regras',
-      render: (item: Location) => (
-        <Link 
-          href={`/settings/locations/${item.id}`}
-          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-xs px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded border border-indigo-100 dark:border-indigo-800"
-        >
-          Configurar Convênios e Preços
-        </Link>
-      )
     }
-  ];
+  ].filter(Boolean) as any[];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg">
             <Building2 className="w-6 h-6" />
@@ -137,6 +144,25 @@ export default function LocationsPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Locais de Atendimento</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Gerencie clínicas, hospitais e consultórios.</p>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-sm mt-4 sm:mt-0">
+          <span className="text-slate-500 font-medium px-2">Exibir Colunas:</span>
+          <label className="flex items-center space-x-1.5 cursor-pointer">
+            <input type="checkbox" checked={showColumns.name} onChange={(e) => setShowColumns(s => ({...s, name: e.target.checked}))} className="rounded border-slate-300 text-blue-600" />
+            <span className="text-slate-700 dark:text-slate-300">Nome</span>
+          </label>
+          <label className="flex items-center space-x-1.5 cursor-pointer">
+            <input type="checkbox" checked={showColumns.address} onChange={(e) => setShowColumns(s => ({...s, address: e.target.checked}))} className="rounded border-slate-300 text-blue-600" />
+            <span className="text-slate-700 dark:text-slate-300">Endereço</span>
+          </label>
+          <label className="flex items-center space-x-1.5 cursor-pointer">
+            <input type="checkbox" checked={showColumns.phone} onChange={(e) => setShowColumns(s => ({...s, phone: e.target.checked}))} className="rounded border-slate-300 text-blue-600" />
+            <span className="text-slate-700 dark:text-slate-300">Telefone</span>
+          </label>
+          <label className="flex items-center space-x-1.5 cursor-pointer pr-2">
+            <input type="checkbox" checked={showColumns.active} onChange={(e) => setShowColumns(s => ({...s, active: e.target.checked}))} className="rounded border-slate-300 text-blue-600" />
+            <span className="text-slate-700 dark:text-slate-300">Status</span>
+          </label>
         </div>
       </div>
 

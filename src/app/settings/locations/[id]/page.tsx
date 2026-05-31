@@ -49,6 +49,12 @@ export default function LocationSettingsPage() {
   const [editedValues, setEditedValues] = useState<Record<string, Record<string, any>>>({}); // { procId: { baseValue, transferType, transferRate, localRate } }
   const [isSaving, setIsSaving] = useState(false);
 
+  // Column visibility
+  const [showColumns, setShowColumns] = useState({
+    baseValue: true,
+    localRate: true
+  });
+
   useEffect(() => {
     fetchData();
   }, [locationId]);
@@ -240,18 +246,40 @@ export default function LocationSettingsPage() {
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200">
                   Preços para: <span className="text-blue-600 dark:text-blue-400">{insurances.find(i => i.id === selectedInsuranceId)?.name}</span>
                 </h3>
-                <button
-                  onClick={handleSavePrices}
-                  disabled={isSaving}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  {isSaving ? 'Salvando...' : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Salvar Regras
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 mr-4 text-sm">
+                    <label className="flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showColumns.baseValue} 
+                        onChange={(e) => setShowColumns(s => ({...s, baseValue: e.target.checked}))}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Valor Base</span>
+                    </label>
+                    <label className="flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={showColumns.localRate} 
+                        onChange={(e) => setShowColumns(s => ({...s, localRate: e.target.checked}))}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>Taxa Local</span>
+                    </label>
+                  </div>
+                  <button
+                    onClick={handleSavePrices}
+                    disabled={isSaving}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {isSaving ? 'Salvando...' : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Regras
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
               
               <div className="flex-1 overflow-auto p-0">
@@ -259,10 +287,10 @@ export default function LocationSettingsPage() {
                   <thead className="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 shadow-sm">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Procedimento</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Valor Base (R$)</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-36">Tipo Repasse</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Repasse</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Taxa Local (R$)</th>
+                      {showColumns.baseValue && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Valor Base (R$)</th>}
+                      {showColumns.localRate && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Taxa Local (R$)</th>}
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
@@ -273,22 +301,6 @@ export default function LocationSettingsPage() {
                           <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-300">
                             <div className="font-medium">{proc.name}</div>
                             <div className="text-xs text-slate-500">{proc.code} • {proc.type}</div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type={vals.transferType === 'VARIABLE' ? "text" : "number"}
-                              step={vals.transferType === 'VARIABLE' ? undefined : "0.01"}
-                              min="0"
-                              disabled={vals.transferType === 'VARIABLE'}
-                              value={vals.transferType === 'VARIABLE' ? '' : (vals.baseValue || '')}
-                              placeholder={vals.transferType === 'VARIABLE' ? 'No Lançamento' : ''}
-                              onChange={(e) => handleValueChange(proc.id, 'baseValue', e.target.value ? parseFloat(e.target.value) : 0)}
-                              className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors ${
-                                vals.transferType === 'VARIABLE' 
-                                  ? 'bg-green-50 border-green-200 text-green-700 placeholder:text-green-600/70 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:placeholder:text-green-700 cursor-not-allowed'
-                                  : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
-                              }`}
-                            />
                           </td>
                           <td className="px-4 py-3 w-44">
                             <TransferTypeToggle 
@@ -312,14 +324,34 @@ export default function LocationSettingsPage() {
                             {vals.transferType === 'FIXED' && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-purple-500 font-bold text-sm z-20 pointer-events-none">R$</span>}
                             {(!vals.transferType || vals.transferType === 'VARIABLE') && <span className="absolute left-[1.35rem] top-1/2 -translate-y-1/2 text-green-500 font-bold text-sm z-20 pointer-events-none">%</span>}
                           </td>
-                          <td className="px-4 py-3">
-                            <input
-                              type="number" step="0.01" min="0"
-                              value={vals.localRate || ''}
-                              onChange={(e) => handleValueChange(proc.id, 'localRate', e.target.value ? parseFloat(e.target.value) : 0)}
-                              className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
-                            />
-                          </td>
+                          {showColumns.baseValue && (
+                            <td className="px-4 py-3">
+                              <input
+                                type={vals.transferType === 'VARIABLE' ? "text" : "number"}
+                                step={vals.transferType === 'VARIABLE' ? undefined : "0.01"}
+                                min="0"
+                                disabled={vals.transferType === 'VARIABLE'}
+                                value={vals.transferType === 'VARIABLE' ? '' : (vals.baseValue || '')}
+                                placeholder={vals.transferType === 'VARIABLE' ? 'No Lançamento' : ''}
+                                onChange={(e) => handleValueChange(proc.id, 'baseValue', e.target.value ? parseFloat(e.target.value) : 0)}
+                                className={`block w-full px-2 py-1.5 border rounded-md text-sm outline-none transition-colors ${
+                                  vals.transferType === 'VARIABLE' 
+                                    ? 'bg-green-50 border-green-200 text-green-700 placeholder:text-green-600/70 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 dark:placeholder:text-green-700 cursor-not-allowed'
+                                    : 'border-slate-200 dark:border-slate-700 focus:ring-1 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                                }`}
+                              />
+                            </td>
+                          )}
+                          {showColumns.localRate && (
+                            <td className="px-4 py-3">
+                              <input
+                                type="number" step="0.01" min="0"
+                                value={vals.localRate || ''}
+                                onChange={(e) => handleValueChange(proc.id, 'localRate', e.target.value ? parseFloat(e.target.value) : 0)}
+                                className="block w-full px-2 py-1.5 border border-slate-200 dark:border-slate-700 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none bg-slate-50 dark:bg-slate-800"
+                              />
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
