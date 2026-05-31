@@ -100,6 +100,18 @@ export default function LocationsPage() {
   };
 
   const columns = [
+    { key: 'name', header: 'Nome' },
+    { key: 'address', header: 'Endereço' },
+    { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
+    { 
+      key: 'active', 
+      header: 'Status',
+      render: (item: Location) => (
+        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+          {item.active ? 'Ativo' : 'Inativo'}
+        </span>
+      )
+    },
     {
       key: 'actions',
       header: 'Regras',
@@ -110,28 +122,6 @@ export default function LocationsPage() {
         >
           Configurar Convênios e Preços
         </Link>
-      )
-    },
-    { 
-      key: 'name', 
-      header: 'Nome',
-      className: 'max-w-[200px] truncate',
-      render: (item: Location) => <span title={item.name}>{item.name}</span>
-    },
-    { 
-      key: 'address', 
-      header: 'Endereço',
-      className: 'max-w-[300px] truncate',
-      render: (item: Location) => <span title={item.address}>{item.address}</span>
-    },
-    { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
-    { 
-      key: 'active', 
-      header: 'Status',
-      render: (item: Location) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-          {item.active ? 'Ativo' : 'Inativo'}
-        </span>
       )
     }
   ];
