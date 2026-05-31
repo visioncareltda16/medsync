@@ -80,6 +80,12 @@ export default function AttendancesPage() {
   const watchProcedureIds = watch('procedureIds') || [];
   const watchQuantity = watch('quantity') || 1;
 
+  useEffect(() => {
+    if (editingAttendance && watchProcedureIds && watchProcedureIds.length > 1) {
+      setValue('procedureIds', [watchProcedureIds[watchProcedureIds.length - 1]]);
+    }
+  }, [watchProcedureIds, editingAttendance, setValue]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -129,6 +135,7 @@ export default function AttendancesPage() {
       if (!config) return null;
       
       let gross = 0;
+      let local = 0;
       let effectiveBaseValue = config.transferType === 'VARIABLE' ? (variableBaseValues[procId] || 0) : config.baseValue;
 
       if (config.transferType === 'FIXED') {
@@ -136,11 +143,12 @@ export default function AttendancesPage() {
       } else {
         gross = (effectiveBaseValue * (config.transferRate / 100)) * watchQuantity;
       }
-      const local = config.localRate * watchQuantity;
-      const subtotal = gross - local;
+      
+      local = (effectiveBaseValue * watchQuantity) - gross;
+      const subtotal = gross;
 
-      return { proc, config, subtotal, effectiveBaseValue };
-    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, effectiveBaseValue: number }>;
+      return { proc, config, subtotal, local, effectiveBaseValue };
+    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number }>;
   }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantity, variableBaseValues]);
 
   const currentSubtotal = useMemo(() => {
@@ -198,7 +206,8 @@ export default function AttendancesPage() {
         const tType = selConfig?.config?.transferType || editingAttendance.transferType || 'PERCENTAGE';
         const tRate = selConfig?.config?.transferRate || editingAttendance.transferRate || 0;
         const bValue = selConfig?.effectiveBaseValue || editingAttendance.baseValue || 0;
-        const lRate = selConfig?.config?.localRate || editingAttendance.localRate || 0;
+        const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
+        const lRate = bValue - perUnitGross;
 
         const payload: any = {
           ...data,
@@ -227,7 +236,8 @@ export default function AttendancesPage() {
           const tType = sel?.config?.transferType || 'PERCENTAGE';
           const tRate = sel?.config?.transferRate || 0;
           const bValue = sel?.effectiveBaseValue || 0;
-          const lRate = sel?.config?.localRate || 0;
+          const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
+          const lRate = bValue - perUnitGross;
           const subtotal = sel?.subtotal || 0;
 
           const payload: any = {
@@ -578,7 +588,7 @@ export default function AttendancesPage() {
             <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-0.5">
                 <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300">
-                  Procedimentos {editingAttendance && <span className="text-amber-500 font-normal">(Edição restrita)</span>}
+                  Procedimentos
                 </label>
                 {watchLocationId && watchInsuranceId && !editingAttendance && (
                   <label className="flex items-center space-x-1.5 cursor-pointer">
@@ -620,12 +630,11 @@ export default function AttendancesPage() {
                         <div className="flex flex-col gap-0">
                           {groupProcs.map(p => {
                             const isChecked = watchProcedureIds.includes(p.id);
-                            const isEditingRestricted = editingAttendance !== null && !isChecked;
                             return (
-                              <label key={p.id} className={`flex items-center space-x-1.5 py-0.5 px-1.5 rounded-sm transition-colors ${isChecked ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-slate-200/50 dark:hover:bg-slate-700/50'} ${isEditingRestricted ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                              <label key={p.id} className={`flex items-center space-x-1.5 py-0.5 px-1.5 rounded-sm transition-colors ${isChecked ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-slate-200/50 dark:hover:bg-slate-700/50'} cursor-pointer`}>
                                 <input 
-                                  type={editingAttendance ? 'radio' : 'checkbox'} 
-                                  disabled={!watchInsuranceId || isEditingRestricted}
+                                  type="checkbox" 
+                                  disabled={!watchInsuranceId}
                                   value={p.id}
                                   {...register('procedureIds')}
                                   className="h-3 w-3 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
@@ -655,7 +664,7 @@ export default function AttendancesPage() {
                     <h4 className="text-xs font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">Regras de Repasse (Automático)</h4>
                   </div>
                   <div className="max-h-40 overflow-y-auto">
-                    {selectedConfigs.map(({ proc, config, subtotal, effectiveBaseValue }) => (
+                    {selectedConfigs.map(({ proc, config, subtotal, local, effectiveBaseValue }) => (
                       <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                         <div className="w-full sm:w-1/3 sm:min-w-[120px]">
                           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={proc.name}>{proc.name}</span>
@@ -683,7 +692,7 @@ export default function AttendancesPage() {
                         <div className="flex-1">
                           <span className="block text-[9px] text-slate-500 uppercase">Taxa Local</span>
                           <span className="font-medium text-xs text-red-600 dark:text-red-400 whitespace-nowrap">
-                            {showValues ? `- R$ ${config.localRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '- R$ ****'}
+                            {showValues ? `- R$ ${Math.abs(local).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '- R$ ****'}
                           </span>
                         </div>
                         <div className="text-right">
