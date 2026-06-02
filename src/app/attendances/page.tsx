@@ -367,7 +367,12 @@ export default function AttendancesPage() {
           <input 
             type="date" 
             value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
+            onChange={(e) => {
+              setFilterDate(e.target.value);
+              if (e.target.value) {
+                setFilterMonth(e.target.value.substring(0, 7));
+              }
+            }}
             className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           />
         </div>
@@ -376,7 +381,10 @@ export default function AttendancesPage() {
           <input 
             type="month" 
             value={filterMonth}
-            onChange={(e) => setFilterMonth(e.target.value)}
+            onChange={(e) => {
+              setFilterMonth(e.target.value);
+              if (e.target.value) setFilterDate('');
+            }}
             className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           />
         </div>

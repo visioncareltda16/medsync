@@ -51,8 +51,12 @@ export const getAttendances = async (filters?: {
 }): Promise<Attendance[]> => {
   let q = query(collection(db, COLLECTION_NAME));
 
-  if (filters?.month) q = query(q, where('month', '==', filters.month));
-  if (filters?.date) q = query(q, where('date', '==', filters.date));
+  if (filters?.date) {
+    q = query(q, where('date', '==', filters.date));
+  } else if (filters?.month) {
+    q = query(q, where('month', '==', filters.month));
+  }
+
   if (filters?.doctorId) q = query(q, where('doctorId', '==', filters.doctorId));
   if (filters?.locationId) q = query(q, where('locationId', '==', filters.locationId));
   if (filters?.status) q = query(q, where('status', '==', filters.status));
