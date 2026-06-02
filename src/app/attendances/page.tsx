@@ -48,6 +48,7 @@ export default function AttendancesPage() {
   const [isRulesExpanded, setIsRulesExpanded] = useState(true);
 
   // Filters
+  const [filterDate, setFilterDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [filterDoctor, setFilterDoctor] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
@@ -92,7 +93,8 @@ export default function AttendancesPage() {
       setLoading(true);
       const [attData, locData, docData, insData, procData] = await Promise.all([
         getAttendances({ 
-          month: filterMonth,
+          date: filterDate || undefined,
+          month: filterMonth || undefined,
           doctorId: !isAdmin && profile?.doctorId ? profile.doctorId : (filterDoctor || undefined),
           locationId: filterLocation || undefined,
           status: (filterStatus as any) || undefined
@@ -116,7 +118,7 @@ export default function AttendancesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [filterMonth, filterDoctor, filterLocation, filterStatus]);
+  }, [filterDate, filterMonth, filterDoctor, filterLocation, filterStatus]);
 
   // Derived options based on selections
   const availableInsurances = useMemo(() => {
@@ -360,6 +362,15 @@ export default function AttendancesPage() {
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-wrap gap-4 items-end">
+        <div className="w-full sm:w-auto">
+          <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Data</label>
+          <input 
+            type="date" 
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+          />
+        </div>
         <div className="w-full sm:w-auto">
           <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Mês</label>
           <input 
