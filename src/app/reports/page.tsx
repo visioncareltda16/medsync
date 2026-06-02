@@ -24,6 +24,7 @@ export default function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Filters for Report
+  const [filterDate, setFilterDate] = useState('');
   const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [filterDoctor, setFilterDoctor] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
@@ -60,7 +61,11 @@ export default function ReportsPage() {
       
       // Filter Data
       let data = [...attendances];
-      if (filterMonth) data = data.filter(a => a.month === filterMonth);
+      if (filterDate) {
+        data = data.filter(a => a.date === filterDate);
+      } else if (filterMonth) {
+        data = data.filter(a => a.month === filterMonth);
+      }
       if (isAdmin && filterDoctor) data = data.filter(a => a.doctorId === filterDoctor);
       if (!isAdmin && profile?.doctorId) data = data.filter(a => a.doctorId === profile.doctorId);
       if (filterLocation) data = data.filter(a => a.locationId === filterLocation);
@@ -86,7 +91,7 @@ export default function ReportsPage() {
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139); // slate-500
       doc.text(`Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`, 14, 36);
-      doc.text(`Mês Referência: ${filterMonth || 'Todos'}`, 14, 41);
+      doc.text(`Período: ${filterDate ? format(parseISO(filterDate), 'dd/MM/yyyy') : (filterMonth || 'Todos')}`, 14, 41);
 
       let startY = 50;
       let totalGeral = 0;
@@ -118,22 +123,29 @@ export default function ReportsPage() {
         doc.setTextColor(15, 23, 42); // slate-900
         doc.text(`${groupBy === 'location' ? 'Local' : groupBy === 'doctor' ? 'Médico' : 'Convênio'}: ${groupName}`, 14, startY);
 
-        const tableData = groupItems.map(item => [
-          format(parseISO(item.date), 'dd/MM/yyyy'),
-          item.patientName,
-          insurances.find(i => i.id === item.insuranceId)?.name || '-',
-          item.status,
-          `R$ ${item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-        ]);
+        const tableData = groupItems.map(item => {
+          // Fallback to calculate real subtotal if it's missing or quantity wasn't multiplied in older records
+          const computedSubtotal = item.subtotal || (item.transferValue * (item.quantity || 1) * (item.transferType === 'PERCENTAGE' ? item.transferRate / 100 : 1));
+          
+          return [
+            format(parseISO(item.date), 'dd/MM/yyyy'),
+            item.patientName,
+            insurances.find(i => i.id === item.insuranceId)?.name || '-',
+            item.quantity?.toString() || '1',
+            item.status,
+            `R$ ${item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+          ];
+        });
 
         autoTable(doc, {
           startY: startY + 5,
-          head: [['Data', 'Paciente', 'Convênio', 'Status', 'Valor (R$)']],
+          head: [['Data', 'Paciente', 'Convênio', 'Qtd', 'Status', 'Valor Total (R$)']],
           body: tableData,
-          foot: [['', '', '', 'Subtotal:', `R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`]],
+          foot: [['', '', '', '', 'Subtotal:', `R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`]],
           theme: 'striped',
-          headStyles: { fillColor: [59, 130, 246] },
-          footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' },
+          headStyles: { fillColor: [59, 130, 246], cellPadding: 2 },
+          styles: { cellPadding: 1.5, fontSize: 8 },
+          footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', cellPadding: 2 },
           margin: { top: 10 },
         });
 
@@ -193,7 +205,20 @@ export default function ReportsPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Filtros do Relatório</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data Específica</label>
+            <input 
+              type="date" 
+              value={filterDate}
+              onChange={(e) => {
+                setFilterDate(e.target.value);
+                if (e.target.value) setFilterMonth(e.target.value.substring(0, 7));
+              }}
+              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mês de Referência</label>
             <input 
