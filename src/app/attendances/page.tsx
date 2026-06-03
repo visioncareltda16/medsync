@@ -77,10 +77,11 @@ export default function AttendancesPage() {
     defaultValues: { quantities: {}, date: format(new Date(), 'yyyy-MM-dd') }
   });
 
-  const watchLocationId = watch('locationId');
-  const watchInsuranceId = watch('insuranceId');
-  const watchProcedureIds = watch('procedureIds') || [];
-  const watchQuantities = watch('quantities') || {};
+  const formValues = watch();
+  const watchLocationId = formValues.locationId;
+  const watchInsuranceId = formValues.insuranceId;
+  const watchProcedureIds = formValues.procedureIds || [];
+  const watchQuantities = formValues.quantities || {};
   const watchQuantitiesStr = JSON.stringify(watchQuantities);
 
   useEffect(() => {
@@ -228,8 +229,8 @@ export default function AttendancesPage() {
           transferType: tType,
           transferRate: tRate,
           baseValue: bValue,
-          localRate: lRate,
-          transferValue: bValue,
+          localRate: lRate * quantity,
+          transferValue: bValue * quantity,
           realValue: currentSubtotal,
           subtotal: currentSubtotal,
           status: editingAttendance.status,
@@ -262,8 +263,8 @@ export default function AttendancesPage() {
             transferType: tType,
             transferRate: tRate,
             baseValue: bValue,
-            localRate: lRate,
-            transferValue: bValue,
+            localRate: lRate * quantity,
+            transferValue: bValue * quantity,
             realValue: subtotal,
             subtotal: subtotal,
             status: 'A RECEBER',
@@ -716,8 +717,8 @@ export default function AttendancesPage() {
                             <input
                               type="number"
                               min="1"
-                              defaultValue={1}
-                              {...register(`quantities.${proc.id}`, { valueAsNumber: true })}
+                              value={watchQuantities[proc.id] || 1}
+                              onChange={(e) => setValue(`quantities.${proc.id}`, parseInt(e.target.value) || 1)}
                               className="w-14 h-7 text-xs px-2 text-center border border-blue-300 bg-blue-50 text-blue-900 font-bold rounded focus:ring-2 focus:ring-blue-500 outline-none dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-100"
                             />
                           </div>
