@@ -81,6 +81,7 @@ export default function AttendancesPage() {
   const watchInsuranceId = watch('insuranceId');
   const watchProcedureIds = watch('procedureIds') || [];
   const watchQuantities = watch('quantities') || {};
+  const watchQuantitiesStr = JSON.stringify(watchQuantities);
 
   useEffect(() => {
     if (editingAttendance && watchProcedureIds && watchProcedureIds.length > 1) {
@@ -155,7 +156,7 @@ export default function AttendancesPage() {
 
       return { proc, config, subtotal, local, effectiveBaseValue, quantity };
     }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number, quantity: number }>;
-  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantities, variableBaseValues]);
+  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantitiesStr, variableBaseValues]);
 
   const currentSubtotal = useMemo(() => {
     return selectedConfigs.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -740,7 +741,7 @@ export default function AttendancesPage() {
                             </div>
                           ) : (
                             <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                              {showValues ? `R$ ${effectiveBaseValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${config.transferRate.toLocaleString()}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
+                              {showValues ? `R$ ${(effectiveBaseValue * quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${(config.transferRate * quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
                             </span>
                           )}
                         </div>
