@@ -24,7 +24,7 @@ const attendanceSchema = z.object({
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
   procedureIds: z.array(z.string()).min(1, 'Selecione pelo menos um procedimento'),
-  quantities: z.record(z.number().min(1, 'Quantidade deve ser maior que 0')).optional()
+  quantities: z.record(z.string(), z.number().min(1, 'Quantidade deve ser maior que 0')).optional()
 });
 
 type AttendanceForm = z.infer<typeof attendanceSchema>;
