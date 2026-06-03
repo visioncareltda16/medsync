@@ -9,7 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';
 import { Modal } from '@/components/ui/Modal';
-import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2 } from 'lucide-react';
+import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Attendance, getAttendances, addAttendance, updateAttendance, deleteAttendance, markAsReceived } from '@/services/attendances';
 import { Location, getLocations } from '@/services/locations';
@@ -46,6 +46,14 @@ export default function AttendancesPage() {
   const [variableBaseValues, setVariableBaseValues] = useState<Record<string, number>>({});
   const [showAllProcedures, setShowAllProcedures] = useState(false);
   const [isRulesExpanded, setIsRulesExpanded] = useState(true);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
   // Filters
   const [filterDate, setFilterDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -452,10 +460,21 @@ export default function AttendancesPage() {
             </div>
           ) : (
             <>
-              {groupedAttendances.map(group => (
-                <div key={group.location?.id} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-                  <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                    <h3 className="font-semibold text-lg text-slate-900 dark:text-white">{group.location?.name || 'Local Desconhecido'}</h3>
+              {groupedAttendances.map(group => {
+                const groupId = group.location?.id || 'unknown';
+                const isCollapsed = collapsedGroups[groupId];
+                return (
+                <div key={groupId} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                  <div 
+                    className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                    onClick={() => toggleGroup(groupId)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white">{group.location?.name || 'Local Desconhecido'}</h3>
+                      <div className="p-1 rounded-full bg-slate-200/50 dark:bg-slate-700/50 text-slate-500">
+                        {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </div>
+                    </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Subtotal Local</p>
                       <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -464,6 +483,7 @@ export default function AttendancesPage() {
                     </div>
                   </div>
                   
+                  {!isCollapsed && (
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                       <thead className="bg-slate-50/50 dark:bg-slate-900">
@@ -554,8 +574,9 @@ export default function AttendancesPage() {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </div>
-              ))}
+              )})}
 
               <div className="bg-blue-600 text-white rounded-xl p-6 flex justify-between items-center shadow-lg">
                 <h3 className="text-xl font-bold uppercase tracking-wide">Total Geral do Mês</h3>
