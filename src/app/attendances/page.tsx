@@ -43,7 +43,8 @@ export default function AttendancesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
-  const [variableBaseValues, setVariableBaseValues] = useState<Record<string, number>>({});
+  const [overrideBaseValues, setOverrideBaseValues] = useState<Record<string, number>>({});
+  const [overrideTransferRates, setOverrideTransferRates] = useState<Record<string, number>>({});
   const [showAllProcedures, setShowAllProcedures] = useState(false);
   const [isRulesExpanded, setIsRulesExpanded] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -149,23 +150,24 @@ export default function AttendancesPage() {
       
       let gross = 0;
       let local = 0;
-      let effectiveBaseValue = config.transferType === 'VARIABLE' ? (variableBaseValues[procId] || 0) : config.baseValue;
+      let effectiveBaseValue = overrideBaseValues[procId] !== undefined ? overrideBaseValues[procId] : (config.transferType === 'VARIABLE' ? 0 : config.baseValue);
+      let effectiveTransferRate = overrideTransferRates[procId] !== undefined ? overrideTransferRates[procId] : config.transferRate;
 
       let quantity = watchQuantities[procId];
       if (typeof quantity !== 'number' || isNaN(quantity)) quantity = 1;
 
       if (config.transferType === 'FIXED') {
-        gross = config.transferRate * quantity;
+        gross = effectiveTransferRate * quantity;
       } else {
-        gross = (effectiveBaseValue * (config.transferRate / 100)) * quantity;
+        gross = (effectiveBaseValue * (effectiveTransferRate / 100)) * quantity;
       }
       
       local = (effectiveBaseValue * quantity) - gross;
       const subtotal = gross;
 
-      return { proc, config, subtotal, local, effectiveBaseValue, quantity };
-    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number, quantity: number }>;
-  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantitiesStr, variableBaseValues]);
+      return { proc, config, subtotal, local, effectiveBaseValue, effectiveTransferRate, quantity };
+    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number, effectiveTransferRate: number, quantity: number }>;
+  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantitiesStr, overrideBaseValues, overrideTransferRates]);
 
   const currentSubtotal = useMemo(() => {
     return selectedConfigs.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -174,7 +176,8 @@ export default function AttendancesPage() {
   const openModal = (attendance?: Attendance) => {
     if (attendance) {
       setEditingAttendance(attendance);
-      setVariableBaseValues({ [attendance.procedureId]: attendance.baseValue || 0 });
+      setOverrideBaseValues({ [attendance.procedureId]: attendance.baseValue || 0 });
+      setOverrideTransferRates({ [attendance.procedureId]: attendance.transferRate || 0 });
       setShowAllProcedures(true);
       setValue('date', attendance.date);
       setValue('doctorId', attendance.doctorId);
@@ -185,7 +188,8 @@ export default function AttendancesPage() {
       setValue('quantities', { [attendance.procedureId]: attendance.quantity });
     } else {
       setEditingAttendance(null);
-      setVariableBaseValues({});
+      setOverrideBaseValues({});
+      setOverrideTransferRates({});
       setShowAllProcedures(false);
       reset({ 
         date: format(new Date(), 'yyyy-MM-dd'),
@@ -200,7 +204,8 @@ export default function AttendancesPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingAttendance(null);
-    setVariableBaseValues({});
+    setOverrideBaseValues({});
+    setOverrideTransferRates({});
     setShowAllProcedures(false);
     reset();
   };
@@ -220,8 +225,8 @@ export default function AttendancesPage() {
       if (editingAttendance) {
         const selConfig = selectedConfigs[0];
         const tType = selConfig?.config?.transferType || editingAttendance.transferType || 'PERCENTAGE';
-        const tRate = selConfig?.config?.transferRate || editingAttendance.transferRate || 0;
-        const bValue = selConfig?.effectiveBaseValue || editingAttendance.baseValue || 0;
+        const tRate = selConfig?.effectiveTransferRate !== undefined ? selConfig.effectiveTransferRate : (editingAttendance.transferRate || 0);
+        const bValue = selConfig?.effectiveBaseValue !== undefined ? selConfig.effectiveBaseValue : (editingAttendance.baseValue || 0);
         const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
         const lRate = bValue - perUnitGross;
         const procId = data.procedureIds[0];
@@ -254,8 +259,8 @@ export default function AttendancesPage() {
         const promises = data.procedureIds.map(procId => {
           const sel = selectedConfigs.find(s => s.proc.id === procId);
           const tType = sel?.config?.transferType || 'PERCENTAGE';
-          const tRate = sel?.config?.transferRate || 0;
-          const bValue = sel?.effectiveBaseValue || 0;
+          const tRate = sel?.effectiveTransferRate !== undefined ? sel.effectiveTransferRate : 0;
+          const bValue = sel?.effectiveBaseValue !== undefined ? sel.effectiveBaseValue : 0;
           const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
           const lRate = bValue - perUnitGross;
           const subtotal = sel?.subtotal || 0;
@@ -748,23 +753,32 @@ export default function AttendancesPage() {
                           </span>
                         </div>
                         <div className="flex-1">
-                          <span className="block text-[9px] text-slate-500 uppercase">Base/Repasse</span>
-                          {config.transferType === 'VARIABLE' ? (
+                          <span className="block text-[9px] text-slate-500 uppercase">Base/Repasse (Unitário)</span>
+                          {showValues ? (
                             <div className="flex items-center gap-1 mt-0.5">
                               <span className="text-xs text-slate-500">R$</span>
                               <input 
                                 type="number" step="0.01" min="0"
-                                value={variableBaseValues[proc.id] || ''}
-                                onChange={(e) => setVariableBaseValues(prev => ({ ...prev, [proc.id]: e.target.value ? parseFloat(e.target.value) : 0 }))}
-                                className="w-16 px-1 py-0.5 text-xs border border-green-300 bg-green-50 text-green-700 rounded outline-none focus:ring-1 focus:ring-green-500 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
+                                value={overrideBaseValues[proc.id] !== undefined ? overrideBaseValues[proc.id] : (config.transferType === 'VARIABLE' ? '' : config.baseValue)}
+                                onChange={(e) => setOverrideBaseValues(prev => ({ ...prev, [proc.id]: e.target.value ? parseFloat(e.target.value) : 0 }))}
+                                className="w-16 px-1 py-0.5 text-xs font-medium border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 rounded outline-none transition-colors dark:text-slate-200"
                                 placeholder="0.00"
+                                title="Editar Base"
                               />
-                              <span className="text-xs text-slate-500">/ {config.transferRate}%</span>
+                              <span className="text-xs text-slate-500">/</span>
+                              {config.transferType === 'FIXED' && <span className="text-xs text-slate-500">R$</span>}
+                              <input 
+                                type="number" step="0.01" min="0"
+                                value={overrideTransferRates[proc.id] !== undefined ? overrideTransferRates[proc.id] : config.transferRate}
+                                onChange={(e) => setOverrideTransferRates(prev => ({ ...prev, [proc.id]: e.target.value ? parseFloat(e.target.value) : 0 }))}
+                                className="w-12 px-1 py-0.5 text-xs font-medium border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent focus:bg-white dark:focus:bg-slate-800 rounded outline-none transition-colors dark:text-slate-200"
+                                placeholder="0.00"
+                                title="Editar Repasse"
+                              />
+                              {config.transferType === 'PERCENTAGE' && <span className="text-xs text-slate-500">%</span>}
                             </div>
                           ) : (
-                            <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                              {showValues ? `R$ ${(effectiveBaseValue * quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / ${config.transferType === 'FIXED' ? `R$ ${(config.transferRate * quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `${config.transferRate}%`}` : 'R$ **** / ****'}
-                            </span>
+                            <span className="font-medium text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">R$ **** / ****</span>
                           )}
                         </div>
                         <div className="flex-1">
