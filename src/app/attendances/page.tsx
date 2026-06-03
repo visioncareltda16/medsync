@@ -24,7 +24,7 @@ const attendanceSchema = z.object({
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
   procedureIds: z.array(z.string()).min(1, 'Selecione pelo menos um procedimento'),
-  quantity: z.number().min(1, 'Quantidade deve ser maior que 0')
+  quantities: z.record(z.number().min(1, 'Quantidade deve ser maior que 0')).optional()
 });
 
 type AttendanceForm = z.infer<typeof attendanceSchema>;
@@ -49,7 +49,7 @@ export default function AttendancesPage() {
 
   // Filters
   const [filterDate, setFilterDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [filterMonth, setFilterMonth] = useState('');
   const [filterDoctor, setFilterDoctor] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterStatus, setFilterStatus] = useState<'A RECEBER' | 'RECEBIDO' | ''>('');
@@ -74,13 +74,13 @@ export default function AttendancesPage() {
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AttendanceForm>({
     resolver: zodResolver(attendanceSchema),
-    defaultValues: { quantity: 1, date: format(new Date(), 'yyyy-MM-dd') }
+    defaultValues: { quantities: {}, date: format(new Date(), 'yyyy-MM-dd') }
   });
 
   const watchLocationId = watch('locationId');
   const watchInsuranceId = watch('insuranceId');
   const watchProcedureIds = watch('procedureIds') || [];
-  const watchQuantity = watch('quantity') || 1;
+  const watchQuantities = watch('quantities') || {};
 
   useEffect(() => {
     if (editingAttendance && watchProcedureIds && watchProcedureIds.length > 1) {
@@ -141,18 +141,21 @@ export default function AttendancesPage() {
       let local = 0;
       let effectiveBaseValue = config.transferType === 'VARIABLE' ? (variableBaseValues[procId] || 0) : config.baseValue;
 
+      let quantity = watchQuantities[procId];
+      if (typeof quantity !== 'number' || isNaN(quantity)) quantity = 1;
+
       if (config.transferType === 'FIXED') {
-        gross = config.transferRate * watchQuantity;
+        gross = config.transferRate * quantity;
       } else {
-        gross = (effectiveBaseValue * (config.transferRate / 100)) * watchQuantity;
+        gross = (effectiveBaseValue * (config.transferRate / 100)) * quantity;
       }
       
-      local = (effectiveBaseValue * watchQuantity) - gross;
+      local = (effectiveBaseValue * quantity) - gross;
       const subtotal = gross;
 
-      return { proc, config, subtotal, local, effectiveBaseValue };
-    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number }>;
-  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantity, variableBaseValues]);
+      return { proc, config, subtotal, local, effectiveBaseValue, quantity };
+    }).filter(Boolean) as Array<{ proc: Procedure, config: any, subtotal: number, local: number, effectiveBaseValue: number, quantity: number }>;
+  }, [watchLocationId, watchInsuranceId, watchProcedureIds, procedures, watchQuantities, variableBaseValues]);
 
   const currentSubtotal = useMemo(() => {
     return selectedConfigs.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -169,7 +172,7 @@ export default function AttendancesPage() {
       setValue('patientName', attendance.patientName);
       setValue('insuranceId', attendance.insuranceId);
       setValue('procedureIds', [attendance.procedureId]);
-      setValue('quantity', attendance.quantity);
+      setValue('quantities', { [attendance.procedureId]: attendance.quantity });
     } else {
       setEditingAttendance(null);
       setVariableBaseValues({});
@@ -178,7 +181,7 @@ export default function AttendancesPage() {
         date: format(new Date(), 'yyyy-MM-dd'),
         doctorId: profile?.doctorId ? profile.doctorId : '',
         procedureIds: [],
-        quantity: 1
+        quantities: {}
       });
     }
     setIsModalOpen(true);
@@ -211,10 +214,13 @@ export default function AttendancesPage() {
         const bValue = selConfig?.effectiveBaseValue || editingAttendance.baseValue || 0;
         const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
         const lRate = bValue - perUnitGross;
+        const procId = data.procedureIds[0];
+        const quantity = data.quantities?.[procId] || 1;
 
         const payload: any = {
           ...data,
-          procedureId: data.procedureIds[0],
+          procedureId: procId,
+          quantity: quantity,
           doctorId: finalDoctorId,
           month: format(dateObj, 'yyyy-MM'),
           dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
@@ -231,6 +237,7 @@ export default function AttendancesPage() {
           createdByRole: editingAttendance.createdByRole || profile?.role || 'MÉDICO',
         };
         delete payload.procedureIds;
+        delete payload.quantities;
         
         await updateAttendance(editingAttendance.id, payload as Omit<Attendance, 'id'>);
       } else {
@@ -242,10 +249,12 @@ export default function AttendancesPage() {
           const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
           const lRate = bValue - perUnitGross;
           const subtotal = sel?.subtotal || 0;
+          const quantity = data.quantities?.[procId] || 1;
 
           const payload: any = {
             ...data,
             procedureId: procId,
+            quantity: quantity,
             doctorId: finalDoctorId,
             month: format(dateObj, 'yyyy-MM'),
             dayOfWeek: format(dateObj, 'EEEE', { locale: ptBR }),
@@ -262,6 +271,7 @@ export default function AttendancesPage() {
             createdByRole: profile?.role || 'MÉDICO',
           };
           delete payload.procedureIds;
+          delete payload.quantities;
           return addAttendance(payload as Omit<Attendance, 'id'>);
         });
 
@@ -590,19 +600,13 @@ export default function AttendancesPage() {
               {errors.patientName && <p className="mt-0.5 text-xs text-red-500">{errors.patientName.message}</p>}
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Convênio</label>
               <select {...register('insuranceId')} disabled={!watchLocationId} className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50">
                 <option value="">Selecione...</option>
                 {availableInsurances.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
               {errors.insuranceId && <p className="mt-0.5 text-xs text-red-500">{errors.insuranceId.message}</p>}
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-0.5">Quantidade</label>
-              <input type="number" {...register('quantity', { valueAsNumber: true })} min="1" className="block w-full px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              {errors.quantity && <p className="mt-0.5 text-xs text-red-500">{errors.quantity.message}</p>}
             </div>
 
             <div className="md:col-span-2">
@@ -660,18 +664,20 @@ export default function AttendancesPage() {
                           {groupProcs.map(p => {
                             const isChecked = watchProcedureIds.includes(p.id);
                             return (
-                              <label key={p.id} className={`flex items-center space-x-1.5 py-0.5 px-1.5 rounded-sm transition-colors ${isChecked ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-slate-200/50 dark:hover:bg-slate-700/50'} cursor-pointer`}>
-                                <input 
-                                  type="checkbox" 
-                                  disabled={!watchInsuranceId}
-                                  value={p.id}
-                                  {...register('procedureIds')}
-                                  className="h-3 w-3 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
-                                />
-                                <span className="text-[12px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
-                                  {p.name}
-                                </span>
-                              </label>
+                              <div key={p.id} className={`flex items-center justify-between py-0.5 px-1.5 rounded-sm transition-colors ${isChecked ? 'bg-blue-100 dark:bg-blue-900/30' : 'hover:bg-slate-200/50 dark:hover:bg-slate-700/50'}`}>
+                                <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-0">
+                                  <input 
+                                    type="checkbox" 
+                                    disabled={!watchInsuranceId}
+                                    value={p.id}
+                                    {...register('procedureIds')}
+                                    className="h-3 w-3 flex-shrink-0 text-blue-600 rounded border-slate-300 focus:ring-blue-500 disabled:opacity-50"
+                                  />
+                                  <span className="text-[12px] font-medium text-slate-700 dark:text-slate-300 leading-tight truncate">
+                                    {p.name}
+                                  </span>
+                                </label>
+                              </div>
                             );
                           })}
                         </div>
@@ -701,10 +707,22 @@ export default function AttendancesPage() {
                   </div>
                   {isRulesExpanded && (
                     <div className="max-h-40 overflow-y-auto">
-                    {selectedConfigs.map(({ proc, config, subtotal, local, effectiveBaseValue }) => (
+                    {selectedConfigs.map(({ proc, config, subtotal, local, effectiveBaseValue, quantity }) => (
                       <div key={proc.id} className="p-3 border-b border-blue-100 dark:border-blue-900/30 last:border-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
-                        <div className="w-full sm:w-1/3 sm:min-w-[120px]">
-                          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 truncate" title={proc.name}>{proc.name}</span>
+                        <div className="w-full sm:w-1/3 sm:min-w-[120px] flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] text-slate-500 uppercase">Qtd</span>
+                            <input
+                              type="number"
+                              min="1"
+                              defaultValue={1}
+                              {...register(`quantities.${proc.id}`, { valueAsNumber: true })}
+                              className="w-14 h-7 text-xs px-2 text-center border border-blue-300 bg-blue-50 text-blue-900 font-bold rounded focus:ring-2 focus:ring-blue-500 outline-none dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-100"
+                            />
+                          </div>
+                          <span className="block text-sm font-bold text-slate-700 dark:text-slate-300 truncate" title={proc.name}>
+                            {proc.name}
+                          </span>
                         </div>
                         <div className="flex-1">
                           <span className="block text-[9px] text-slate-500 uppercase">Base/Repasse</span>
