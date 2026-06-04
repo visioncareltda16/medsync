@@ -40,6 +40,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // If not loading, no user, and not on a public page, we are redirecting to login. Don't render the app shell.
+  if (!user) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   // Require profile loaded to show app
   if (!profile && user) {
     return (

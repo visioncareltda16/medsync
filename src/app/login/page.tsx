@@ -93,12 +93,25 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950">
       {/* Left panel - Branding */}
-      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-blue-600 text-white p-12">
-        <Stethoscope className="w-24 h-24 mb-6 opacity-90" />
-        <h1 className="text-4xl font-bold mb-4 text-center">MedSync</h1>
-        <p className="text-blue-100 text-lg text-center max-w-md">
-          Sistema completo e inteligente para gerenciamento de serviços médicos, repasses e faturamento diário.
-        </p>
+      <div className="hidden md:flex flex-col justify-center items-center w-1/2 relative text-white p-12 overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105"
+          style={{ backgroundImage: "url('/login_bg.png')" }}
+        />
+        {/* Gradient Overlay for Readability */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/80 to-slate-900/90" />
+        
+        {/* Content */}
+        <div className="z-20 flex flex-col items-center">
+          <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm mb-6 shadow-xl border border-white/20">
+            <Stethoscope className="w-20 h-20 opacity-100" />
+          </div>
+          <h1 className="text-5xl font-extrabold mb-4 text-center tracking-tight text-white drop-shadow-md">MedSync</h1>
+          <p className="text-blue-50 text-xl text-center max-w-md leading-relaxed drop-shadow-sm font-medium">
+            Sistema completo e inteligente para gerenciamento de serviços médicos, repasses e faturamento diário.
+          </p>
+        </div>
       </div>
 
       {/* Right panel - Form */}
