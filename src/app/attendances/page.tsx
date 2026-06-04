@@ -178,7 +178,7 @@ export default function AttendancesPage() {
       setEditingAttendance(attendance);
       setOverrideBaseValues({ [attendance.procedureId]: attendance.baseValue || 0 });
       setOverrideTransferRates({ [attendance.procedureId]: attendance.transferRate || 0 });
-      setShowAllProcedures(true);
+      setShowAllProcedures(false);
       setValue('date', attendance.date);
       setValue('doctorId', attendance.doctorId);
       setValue('locationId', attendance.locationId);
@@ -653,7 +653,7 @@ export default function AttendancesPage() {
                 <label className="block text-[13px] font-medium text-slate-700 dark:text-slate-300">
                   Procedimentos
                 </label>
-                {watchLocationId && watchInsuranceId && !editingAttendance && !showAllProcedures && (
+                {watchLocationId && watchInsuranceId && !showAllProcedures && (
                   <button 
                     type="button"
                     onClick={() => setShowAllProcedures(true)}
@@ -662,7 +662,7 @@ export default function AttendancesPage() {
                     + Incluir procedimento não configurado
                   </button>
                 )}
-                {watchLocationId && watchInsuranceId && !editingAttendance && showAllProcedures && (
+                {watchLocationId && watchInsuranceId && showAllProcedures && (
                   <button 
                     type="button"
                     onClick={() => setShowAllProcedures(false)}
@@ -685,7 +685,7 @@ export default function AttendancesPage() {
                           return false;
                         }
                         
-                        if (showAllProcedures || editingAttendance) return true;
+                        if (showAllProcedures || watchProcedureIds.includes(p.id)) return true;
                         
                         const key = `${watchInsuranceId}_${watchLocationId}`;
                         const val = p.values?.[key];
