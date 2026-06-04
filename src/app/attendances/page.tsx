@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -93,10 +93,18 @@ export default function AttendancesPage() {
   const watchQuantities = formValues.quantities || {};
   const watchQuantitiesStr = JSON.stringify(watchQuantities);
 
+  const previousProcedureIds = useRef<string[]>([]);
+  
   useEffect(() => {
     if (editingAttendance && watchProcedureIds && watchProcedureIds.length > 1) {
-      setValue('procedureIds', [watchProcedureIds[watchProcedureIds.length - 1]]);
+      const newlyAdded = watchProcedureIds.find(id => !previousProcedureIds.current.includes(id));
+      if (newlyAdded) {
+        setValue('procedureIds', [newlyAdded]);
+      } else {
+        setValue('procedureIds', [watchProcedureIds[watchProcedureIds.length - 1]]);
+      }
     }
+    previousProcedureIds.current = watchProcedureIds;
   }, [watchProcedureIds, editingAttendance, setValue]);
 
   const fetchData = async () => {
