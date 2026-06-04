@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${openSans.variable} ${geistMono.variable} antialiased h-full`}
     >
-      <body className="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans font-light">
+      <body className="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
         <AppLayout>{children}</AppLayout>
       </body>
     </html>

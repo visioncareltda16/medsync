@@ -78,7 +78,7 @@ export default function Sidebar() {
                     <item.icon className={`w-5 h-5 mr-3 transition-transform duration-300 group-hover:scale-125 ${
                       isActive(item.href) ? 'text-white drop-shadow-sm' : item.color
                     }`} />
-                    <span className="font-light tracking-wide">{item.name}</span>
+                    <span className="font-medium tracking-wide">{item.name}</span>
                   </Link>
                 </li>
               ))}
@@ -104,7 +104,7 @@ export default function Sidebar() {
                         <item.icon className={`w-5 h-5 mr-3 transition-transform duration-300 group-hover:scale-125 ${
                           isActive(item.href) ? 'text-white drop-shadow-sm' : item.color
                         }`} />
-                        <span className="font-light tracking-wide">{item.name}</span>
+                        <span className="font-medium tracking-wide">{item.name}</span>
                       </Link>
                     </li>
                   ))}

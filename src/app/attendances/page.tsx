@@ -24,7 +24,7 @@ const attendanceSchema = z.object({
   patientName: z.string().min(1, 'Paciente é obrigatório'),
   insuranceId: z.string().min(1, 'Convênio é obrigatório'),
   procedureIds: z.array(z.string()).min(1, 'Selecione pelo menos um procedimento'),
-  quantities: z.record(z.string(), z.number().min(1, 'Quantidade deve ser maior que 0')).optional()
+  quantities: z.record(z.string(), z.any()).optional()
 });
 
 type AttendanceForm = z.infer<typeof attendanceSchema>;
@@ -238,7 +238,8 @@ export default function AttendancesPage() {
         const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
         const lRate = bValue - perUnitGross;
         const procId = data.procedureIds[0];
-        const quantity = data.quantities?.[procId] || 1;
+        const rawQty = data.quantities?.[procId];
+        const quantity = (typeof rawQty === 'number' && !isNaN(rawQty) && rawQty > 0) ? rawQty : 1;
 
         const payload: any = {
           ...data,
@@ -272,7 +273,8 @@ export default function AttendancesPage() {
           const perUnitGross = tType === 'FIXED' ? tRate : (bValue * (tRate / 100));
           const lRate = bValue - perUnitGross;
           const subtotal = sel?.subtotal || 0;
-          const quantity = data.quantities?.[procId] || 1;
+          const rawQty = data.quantities?.[procId];
+          const quantity = (typeof rawQty === 'number' || !isNaN(Number(rawQty))) && Number(rawQty) > 0 ? Number(rawQty) : 1;
 
           const payload: any = {
             ...data,
@@ -762,8 +764,9 @@ export default function AttendancesPage() {
                             <input
                               type="number"
                               min="1"
-                              value={watchQuantities[proc.id] || 1}
-                              onChange={(e) => setValue(`quantities.${proc.id}`, parseInt(e.target.value) || 1)}
+                              value={watchQuantities[proc.id] !== undefined ? watchQuantities[proc.id] : 1}
+                              onChange={(e) => setValue(`quantities.${proc.id}`, e.target.value === '' ? '' : parseInt(e.target.value))}
+                              onFocus={(e) => e.target.select()}
                               className="w-14 h-7 text-xs px-2 text-center border border-blue-300 bg-blue-50 text-blue-900 font-bold rounded focus:ring-2 focus:ring-blue-500 outline-none dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-100"
                             />
                           </div>
