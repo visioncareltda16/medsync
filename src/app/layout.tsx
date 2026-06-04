@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Open_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppLayout from "@/components/layout/AppLayout";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
 });
 
@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+      className={`${openSans.variable} ${geistMono.variable} antialiased h-full`}
     >
-      <body className="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
+      <body className="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans font-light">
         <AppLayout>{children}</AppLayout>
       </body>
     </html>
