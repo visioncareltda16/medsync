@@ -100,7 +100,7 @@ export default function LoginPage() {
           style={{ backgroundImage: "url('/login_bg.png')" }}
         />
         {/* Gradient Overlay for Readability */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/80 to-slate-900/90" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/50 via-blue-800/40 to-slate-900/60" />
         
         {/* Content */}
         <div className="z-20 flex flex-col items-center">
