@@ -501,19 +501,19 @@ export default function AttendancesPage() {
                     <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                       <thead className="bg-slate-50/50 dark:bg-slate-900">
                         <tr>
-                          <th onClick={() => handleSort('date')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Data{renderSortIcon('date')}</th>
+                          <th onClick={() => handleSort('date')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Data{renderSortIcon('date')}</th>
                           {isAdmin && (
-                            <th onClick={() => handleSort('doctorName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Médico{renderSortIcon('doctorName')}</th>
+                            <th onClick={() => handleSort('doctorName')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Médico{renderSortIcon('doctorName')}</th>
                           )}
-                          <th onClick={() => handleSort('patientName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Paciente/Proced.{renderSortIcon('patientName')}</th>
-                          <th onClick={() => handleSort('insuranceName')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Convênio{renderSortIcon('insuranceName')}</th>
-                          <th onClick={() => handleSort('quantity')} className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Qtd{renderSortIcon('quantity')}</th>
-                          <th onClick={() => handleSort('subtotal')} className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Valor Repasse{renderSortIcon('subtotal')}</th>
-                          <th onClick={() => handleSort('status')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Status{renderSortIcon('status')}</th>
+                          <th onClick={() => handleSort('patientName')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Paciente/Proced.{renderSortIcon('patientName')}</th>
+                          <th onClick={() => handleSort('insuranceName')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Convênio{renderSortIcon('insuranceName')}</th>
+                          <th onClick={() => handleSort('quantity')} className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Qtd{renderSortIcon('quantity')}</th>
+                          <th onClick={() => handleSort('subtotal')} className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Valor Repasse{renderSortIcon('subtotal')}</th>
+                          <th onClick={() => handleSort('status')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Status{renderSortIcon('status')}</th>
                           {isAdmin && (
-                            <th onClick={() => handleSort('createdBy')} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Lançado Por{renderSortIcon('createdBy')}</th>
+                            <th onClick={() => handleSort('createdBy')} className="px-3 py-2 text-left text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Lançado Por{renderSortIcon('createdBy')}</th>
                           )}
-                          <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
+                          <th className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -521,53 +521,53 @@ export default function AttendancesPage() {
                           const dateColor = dateColors[uniqueDates.indexOf(item.date) % dateColors.length];
                           return (
                           <tr key={item.id} className={`${dateColor} hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors`}>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 py-2 whitespace-nowrap">
                               <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{format(parseISO(item.date), 'dd/MM/yyyy')}</div>
-                              <div className="text-xs text-slate-500 capitalize">{item.dayOfWeek}</div>
+                              <div className="text-[11px] text-slate-500 capitalize">{item.dayOfWeek}</div>
                             </td>
                             {isAdmin && (
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                              <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-500">
                                 {doctors.find(d => d.id === item.doctorId)?.name || 'Desconhecido'}
                               </td>
                             )}
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.patientName}</div>
-                              <div className="text-xs text-slate-500">{procedures.find(p => p.id === item.procedureId)?.name}</div>
+                            <td className="px-3 py-2">
+                              <div className="text-sm font-medium text-slate-900 dark:text-slate-100 line-clamp-1">{item.patientName}</div>
+                              <div className="text-[11px] text-slate-500 line-clamp-1">{procedures.find(p => p.id === item.procedureId)?.name}</div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-500">
                               {insurances.find(i => i.id === item.insuranceId)?.name}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100 text-right font-medium">
+                            <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100 text-right font-medium">
                               {item.quantity}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <td className="px-3 py-2 whitespace-nowrap text-right">
                               <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                                 {showValues ? `R$ ${item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                               </div>
-                              <div className="text-xs text-slate-500">
+                              <div className="text-[11px] text-slate-500">
                                 {item.transferType === 'FIXED' 
                                   ? `Fixo de R$ ${item.transferRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
                                   : `${item.transferRate}% de R$ ${showValues ? item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '****'}`}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <td className="px-3 py-2 whitespace-nowrap text-center">
                               {item.status === 'RECEBIDO' ? (
-                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                                <span className="px-2 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                                   Recebido
                                 </span>
                               ) : (
-                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                <span className="px-2 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                                   A Receber
                                 </span>
                               )}
                             </td>
                             {isAdmin && (
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-xs font-medium text-slate-900 dark:text-slate-100">{item.createdBy || 'Sistema'}</div>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                <div className="text-[11px] font-medium text-slate-900 dark:text-slate-100">{item.createdBy || 'Sistema'}</div>
                                 <div className="text-[10px] text-slate-500">{item.createdByRole === 'ADMIN' ? 'Admin' : 'Médico'}</div>
                               </td>
                             )}
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-2">
                                 {item.status === 'A RECEBER' && (
                                   <button onClick={() => handleMarkReceived(item)} title="Marcar como Recebido" className="text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-400">
