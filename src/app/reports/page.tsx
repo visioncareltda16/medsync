@@ -137,16 +137,29 @@ export default function ReportsPage() {
           ];
         });
 
+        const uniqueDates = Array.from(new Set(groupItems.map(item => item.date)));
+
         autoTable(doc, {
           startY: startY + 5,
           head: [['Data', 'Paciente', 'Convênio', 'Qtd', 'Status', 'Valor Total (R$)']],
           body: tableData,
           foot: [['', '', '', '', 'Subtotal:', `R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`]],
-          theme: 'striped',
-          headStyles: { fillColor: [59, 130, 246], cellPadding: 2 },
-          styles: { cellPadding: 1.5, fontSize: 8 },
+          theme: 'plain',
+          headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255], cellPadding: 2, fontStyle: 'bold' },
+          styles: { cellPadding: 1.5, fontSize: 8, textColor: [51, 65, 85] },
           footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', cellPadding: 2 },
           margin: { top: 10 },
+          didParseCell: function(data) {
+            if (data.section === 'body') {
+              const item = groupItems[data.row.index];
+              const colorIndex = uniqueDates.indexOf(item.date) % 2;
+              if (colorIndex === 0) {
+                data.cell.styles.fillColor = [248, 250, 252]; // slate-50 (light gray)
+              } else {
+                data.cell.styles.fillColor = [255, 255, 255]; // white
+              }
+            }
+          }
         });
 
         startY = (doc as any).lastAutoTable.finalY + 15;

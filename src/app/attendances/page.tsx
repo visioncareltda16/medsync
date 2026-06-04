@@ -468,6 +468,14 @@ export default function AttendancesPage() {
               {groupedAttendances.map(group => {
                 const groupId = group.location?.id || 'unknown';
                 const isCollapsed = collapsedGroups[groupId];
+                const uniqueDates = Array.from(new Set(group.items.map(i => i.date)));
+                const dateColors = [
+                  'bg-blue-50/60 dark:bg-blue-900/20',
+                  'bg-emerald-50/60 dark:bg-emerald-900/20',
+                  'bg-amber-50/60 dark:bg-amber-900/20',
+                  'bg-purple-50/60 dark:bg-purple-900/20',
+                  'bg-rose-50/60 dark:bg-rose-900/20'
+                ];
                 return (
                 <div key={groupId} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                   <div 
@@ -509,8 +517,10 @@ export default function AttendancesPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                        {group.items.map(item => (
-                          <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                        {group.items.map(item => {
+                          const dateColor = dateColors[uniqueDates.indexOf(item.date) % dateColors.length];
+                          return (
+                          <tr key={item.id} className={`${dateColor} hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors`}>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{format(parseISO(item.date), 'dd/MM/yyyy')}</div>
                               <div className="text-xs text-slate-500 capitalize">{item.dayOfWeek}</div>
@@ -575,7 +585,8 @@ export default function AttendancesPage() {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
