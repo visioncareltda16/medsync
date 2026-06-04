@@ -470,11 +470,11 @@ export default function AttendancesPage() {
                 const isCollapsed = collapsedGroups[groupId];
                 const uniqueDates = Array.from(new Set(group.items.map(i => i.date)));
                 const dateColors = [
-                  'bg-blue-50/60 dark:bg-blue-900/20',
-                  'bg-emerald-50/60 dark:bg-emerald-900/20',
-                  'bg-amber-50/60 dark:bg-amber-900/20',
-                  'bg-purple-50/60 dark:bg-purple-900/20',
-                  'bg-rose-50/60 dark:bg-rose-900/20'
+                  'bg-blue-100/70 dark:bg-blue-900/40',
+                  'bg-emerald-100/70 dark:bg-emerald-900/40',
+                  'bg-amber-100/70 dark:bg-amber-900/40',
+                  'bg-purple-100/70 dark:bg-purple-900/40',
+                  'bg-rose-100/70 dark:bg-rose-900/40'
                 ];
                 return (
                 <div key={groupId} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
