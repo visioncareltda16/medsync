@@ -91,8 +91,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950">
-      {/* Left panel - Branding */}
+    <div className="min-h-[100dvh] flex flex-col md:flex-row bg-slate-50 dark:bg-slate-950 relative">
+      {/* Mobile Background Image */}
+      <div 
+        className="md:hidden absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/login_bg.png')" }}
+      />
+      {/* Mobile Gradient Overlay */}
+      <div className="md:hidden absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/70 to-slate-900/90" />
+
+      {/* Left panel - Branding (Desktop only) */}
       <div className="hidden md:flex flex-col justify-center items-center w-1/2 relative text-white p-12 overflow-hidden">
         {/* Background Image */}
         <div 
@@ -115,12 +123,20 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel - Form */}
-      <div className="flex flex-col justify-center items-center w-full md:w-1/2 p-8 md:p-12">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 p-8">
-          <div className="md:hidden flex items-center justify-center mb-8 text-blue-600 dark:text-blue-500">
-            <Stethoscope className="w-10 h-10 mr-2" />
-            <h1 className="text-3xl font-bold tracking-tight">MedSync</h1>
+      <div className="z-20 flex flex-col justify-center items-center w-full md:w-1/2 p-4 sm:p-8 md:p-12 min-h-[100dvh] md:min-h-0">
+        
+        {/* Mobile Branding */}
+        <div className="md:hidden flex flex-col items-center justify-center mb-6 mt-4 text-white">
+          <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm mb-3 border border-white/30 shadow-lg">
+            <Stethoscope className="w-12 h-12" />
           </div>
+          <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-md">MedSync</h1>
+          <p className="text-blue-50/90 text-sm mt-2 text-center max-w-xs drop-shadow-sm font-medium">
+            Gestão inteligente de serviços médicos
+          </p>
+        </div>
+
+        <div className="w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-md md:bg-white md:dark:bg-slate-900 rounded-2xl shadow-xl border border-white/20 md:border-slate-100 dark:border-slate-800 p-6 sm:p-8">
 
           {view === 'login' && (
             <>
