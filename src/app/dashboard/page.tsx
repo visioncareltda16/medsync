@@ -129,8 +129,8 @@ export default function DashboardPage() {
           <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {filterMonth}.</p>
         </div>
         
-        <div className="flex gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="w-full sm:w-auto">
             <input 
               type="month"
               value={filterMonth}
@@ -140,7 +140,7 @@ export default function DashboardPage() {
           </div>
           {isAdmin && (
             <>
-              <div>
+              <div className="w-full sm:w-auto">
                 <select 
                   value={filterDoctor}
                   onChange={(e) => setFilterDoctor(e.target.value)}
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                   {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
-              <div>
+              <div className="w-full sm:w-auto">
                 <select 
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
