@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,6 +35,19 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [timeoutMessage, setTimeoutMessage] = useState<string | null>(null);
+
+  // Check for timeout URL parameter
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('timeout') === 'true') {
+        setTimeoutMessage('Sua sessão expirou por inatividade (30 minutos). Por favor, faça login novamente.');
+        // Remove the parameter from URL to prevent showing it again on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
 
   const { register: registerLogin, handleSubmit: handleLoginSubmit, formState: { errors: loginErrors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema)
@@ -142,6 +155,13 @@ export default function LoginPage() {
             <>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Bem-vindo de volta</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-8">Faça login na sua conta para continuar</p>
+
+              {timeoutMessage && (
+                <div className="mb-6 p-4 rounded-lg bg-orange-50 text-orange-700 text-sm flex items-start border border-orange-200">
+                  <AlertCircle className="w-5 h-5 mr-2 shrink-0 text-orange-500" />
+                  <span>{timeoutMessage}</span>
+                </div>
+              )}
 
               {error && (
                 <div className="mb-4 p-4 rounded-lg bg-red-50 text-red-600 text-sm flex items-start">

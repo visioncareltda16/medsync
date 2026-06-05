@@ -5,12 +5,22 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useAuthStore } from '@/store/useAuthStore';
-import { initAuthListener } from '@/services/auth';
+import { initAuthListener, logout } from '@/services/auth';
+import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+
+  // 30 minutes inactivity timeout
+  useIdleTimeout(() => {
+    if (user) {
+      console.log('User logged out due to inactivity');
+      logout();
+      router.push('/login?timeout=true');
+    }
+  }, 30);
 
   useEffect(() => {
     const unsubscribe = initAuthListener();
