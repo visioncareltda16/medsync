@@ -30,9 +30,7 @@ export default function DashboardPage() {
   // Dashboard Admin Filters
   const [filterDoctor, setFilterDoctor] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
-
-  // Default to current month
-  const currentMonth = format(new Date(), 'yyyy-MM');
+  const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,14 +62,14 @@ export default function DashboardPage() {
 
   // Compute KPIs for current month
   const kpis = useMemo(() => {
-    const currentAtts = attendances.filter(a => a.month === currentMonth);
+    const currentAtts = attendances.filter(a => a.month === filterMonth);
     const totalMes = currentAtts.reduce((acc, a) => acc + a.subtotal, 0);
     const totalRecebido = currentAtts.filter(a => a.status === 'RECEBIDO').reduce((acc, a) => acc + a.subtotal, 0);
     const totalAReceber = currentAtts.filter(a => a.status === 'A RECEBER').reduce((acc, a) => acc + a.subtotal, 0);
     const totalAtendimentos = currentAtts.reduce((acc, a) => acc + a.quantity, 0);
 
     return { totalMes, totalRecebido, totalAReceber, totalAtendimentos };
-  }, [attendances, currentMonth]);
+  }, [attendances, filterMonth]);
 
   // Data for Charts
   const chartData = useMemo(() => {
@@ -84,7 +82,7 @@ export default function DashboardPage() {
     // 2. Comparativo entre locais (Bar)
     const locMap = locations.reduce((acc, loc) => ({ ...acc, [loc.id]: loc.name }), {} as Record<string, string>);
     const locationDataObj: Record<string, number> = {};
-    attendances.filter(a => a.month === currentMonth).forEach(a => {
+    attendances.filter(a => a.month === filterMonth).forEach(a => {
       const locName = locMap[a.locationId] || 'Desconhecido';
       locationDataObj[locName] = (locationDataObj[locName] || 0) + a.subtotal;
     });
@@ -93,7 +91,7 @@ export default function DashboardPage() {
     // 3. Comparativo por convênio (Pie)
     const insMap = insurances.reduce((acc, ins) => ({ ...acc, [ins.id]: ins.name }), {} as Record<string, string>);
     const insuranceDataObj: Record<string, number> = {};
-    attendances.filter(a => a.month === currentMonth).forEach(a => {
+    attendances.filter(a => a.month === filterMonth).forEach(a => {
       const insName = insMap[a.insuranceId] || 'Desconhecido';
       insuranceDataObj[insName] = (insuranceDataObj[insName] || 0) + a.subtotal;
     });
@@ -101,7 +99,10 @@ export default function DashboardPage() {
 
     // 4. Evolução mensal de faturamento (Line)
     // Get last 6 months
-    const last6Months = Array.from({ length: 6 }).map((_, i) => format(subMonths(new Date(), 5 - i), 'yyyy-MM'));
+    const [year, monthStr] = filterMonth.split('-');
+    const baseDate = new Date(parseInt(year), parseInt(monthStr) - 1, 1);
+    
+    const last6Months = Array.from({ length: 6 }).map((_, i) => format(subMonths(baseDate, 5 - i), 'yyyy-MM'));
     const evolutionData = last6Months.map(month => {
       const monthAtts = attendances.filter(a => a.month === month);
       const recebido = monthAtts.filter(a => a.status === 'RECEBIDO').reduce((acc, a) => acc + a.subtotal, 0);
@@ -110,7 +111,7 @@ export default function DashboardPage() {
     });
 
     return { statusData, locationData, insuranceData, evolutionData };
-  }, [attendances, kpis, locations, insurances, currentMonth]);
+  }, [attendances, kpis, locations, insurances, filterMonth]);
 
   if (loading) {
     return (
@@ -125,33 +126,43 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Geral</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {currentMonth}.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {filterMonth}.</p>
         </div>
         
-        {isAdmin && (
-          <div className="flex gap-4">
-            <div>
-              <select 
-                value={filterDoctor}
-                onChange={(e) => setFilterDoctor(e.target.value)}
-                className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
-              >
-                <option value="">Todos os Médicos</option>
-                {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <select 
-                value={filterLocation}
-                onChange={(e) => setFilterLocation(e.target.value)}
-                className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
-              >
-                <option value="">Todos os Locais</option>
-                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
-            </div>
+        <div className="flex gap-4">
+          <div>
+            <input 
+              type="month"
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+            />
           </div>
-        )}
+          {isAdmin && (
+            <>
+              <div>
+                <select 
+                  value={filterDoctor}
+                  onChange={(e) => setFilterDoctor(e.target.value)}
+                  className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+                >
+                  <option value="">Todos os Médicos</option>
+                  {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <select 
+                  value={filterLocation}
+                  onChange={(e) => setFilterLocation(e.target.value)}
+                  className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+                >
+                  <option value="">Todos os Locais</option>
+                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* KPI Cards */}
