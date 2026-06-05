@@ -408,7 +408,7 @@ export default function AttendancesPage() {
                 setFilterMonth(e.target.value.substring(0, 7));
               }
             }}
-            className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+            className="block w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           />
         </div>
         <div className="w-full sm:w-auto">
@@ -420,7 +420,7 @@ export default function AttendancesPage() {
               setFilterMonth(e.target.value);
               if (e.target.value) setFilterDate('');
             }}
-            className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+            className="block w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           />
         </div>
         {isAdmin && (
@@ -429,7 +429,7 @@ export default function AttendancesPage() {
             <select 
               value={filterDoctor}
               onChange={(e) => setFilterDoctor(e.target.value)}
-              className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+              className="block w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
             >
               <option value="">Todos os Médicos</option>
               {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -441,7 +441,7 @@ export default function AttendancesPage() {
           <select 
             value={filterLocation}
             onChange={(e) => setFilterLocation(e.target.value)}
-            className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+            className="block w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           >
             <option value="">Todos os Locais</option>
             {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -452,7 +452,7 @@ export default function AttendancesPage() {
           <select 
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
+            className="block w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-blue-500"
           >
             <option value="">Todos</option>
             <option value="A RECEBER">A Receber</option>
