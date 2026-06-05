@@ -30,7 +30,7 @@ export default function DashboardPage() {
   // Dashboard Admin Filters
   const [filterDoctor, setFilterDoctor] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
-  const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [filterDate, setFilterDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,16 +60,16 @@ export default function DashboardPage() {
     fetchData();
   }, [isAdmin, profile, filterDoctor, filterLocation]);
 
-  // Compute KPIs for current month
+  // Compute KPIs for current day
   const kpis = useMemo(() => {
-    const currentAtts = attendances.filter(a => a.month === filterMonth);
+    const currentAtts = attendances.filter(a => a.date === filterDate);
     const totalMes = currentAtts.reduce((acc, a) => acc + a.subtotal, 0);
     const totalRecebido = currentAtts.filter(a => a.status === 'RECEBIDO').reduce((acc, a) => acc + a.subtotal, 0);
     const totalAReceber = currentAtts.filter(a => a.status === 'A RECEBER').reduce((acc, a) => acc + a.subtotal, 0);
     const totalAtendimentos = currentAtts.reduce((acc, a) => acc + a.quantity, 0);
 
     return { totalMes, totalRecebido, totalAReceber, totalAtendimentos };
-  }, [attendances, filterMonth]);
+  }, [attendances, filterDate]);
 
   // Data for Charts
   const chartData = useMemo(() => {
@@ -82,7 +82,7 @@ export default function DashboardPage() {
     // 2. Comparativo entre locais (Bar)
     const locMap = locations.reduce((acc, loc) => ({ ...acc, [loc.id]: loc.name }), {} as Record<string, string>);
     const locationDataObj: Record<string, number> = {};
-    attendances.filter(a => a.month === filterMonth).forEach(a => {
+    attendances.filter(a => a.date === filterDate).forEach(a => {
       const locName = locMap[a.locationId] || 'Desconhecido';
       locationDataObj[locName] = (locationDataObj[locName] || 0) + a.subtotal;
     });
@@ -91,15 +91,15 @@ export default function DashboardPage() {
     // 3. Comparativo por convênio (Pie)
     const insMap = insurances.reduce((acc, ins) => ({ ...acc, [ins.id]: ins.name }), {} as Record<string, string>);
     const insuranceDataObj: Record<string, number> = {};
-    attendances.filter(a => a.month === filterMonth).forEach(a => {
+    attendances.filter(a => a.date === filterDate).forEach(a => {
       const insName = insMap[a.insuranceId] || 'Desconhecido';
       insuranceDataObj[insName] = (insuranceDataObj[insName] || 0) + a.subtotal;
     });
     const insuranceData = Object.keys(insuranceDataObj).map(key => ({ name: key, value: insuranceDataObj[key] }));
 
     // 4. Evolução mensal de faturamento (Line)
-    // Get last 6 months
-    const [year, monthStr] = filterMonth.split('-');
+    // Get last 6 months based on selected date
+    const [year, monthStr] = filterDate.split('-');
     const baseDate = new Date(parseInt(year), parseInt(monthStr) - 1, 1);
     
     const last6Months = Array.from({ length: 6 }).map((_, i) => format(subMonths(baseDate, 5 - i), 'yyyy-MM'));
@@ -111,7 +111,7 @@ export default function DashboardPage() {
     });
 
     return { statusData, locationData, insuranceData, evolutionData };
-  }, [attendances, kpis, locations, insurances, filterMonth]);
+  }, [attendances, kpis, locations, insurances, filterDate]);
 
   if (loading) {
     return (
@@ -126,15 +126,17 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard Geral</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Visão financeira e operacional do mês de {filterMonth}.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Visão financeira e operacional do dia {filterDate.split('-').reverse().join('/')}.
+          </p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <div className="w-full sm:w-auto">
             <input 
-              type="month"
-              value={filterMonth}
-              onChange={(e) => setFilterMonth(e.target.value)}
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
               className="block w-full h-10 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
             />
           </div>
@@ -240,7 +242,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Faturamento por Local (Mês Atual)</h3>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Faturamento por Local (Dia Atual)</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData.locationData}>
