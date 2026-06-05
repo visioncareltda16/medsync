@@ -133,8 +133,9 @@ export default function DashboardPage() {
           </p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-end">
           <div className="w-full sm:w-auto">
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Dia Específico</label>
             <input 
               type="date"
               value={filterDate}
@@ -146,6 +147,7 @@ export default function DashboardPage() {
             />
           </div>
           <div className="w-full sm:w-auto">
+            <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Mês de Fechamento</label>
             <input 
               type="month"
               value={filterMonth}
@@ -159,6 +161,7 @@ export default function DashboardPage() {
           {isAdmin && (
             <>
               <div className="w-full sm:w-auto">
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Médico</label>
                 <select 
                   value={filterDoctor}
                   onChange={(e) => setFilterDoctor(e.target.value)}
@@ -169,6 +172,7 @@ export default function DashboardPage() {
                 </select>
               </div>
               <div className="w-full sm:w-auto">
+                <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Local</label>
                 <select 
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
