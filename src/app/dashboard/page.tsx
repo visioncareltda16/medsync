@@ -135,7 +135,7 @@ export default function DashboardPage() {
               type="month"
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
-              className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+              className="block w-full h-10 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
             />
           </div>
           {isAdmin && (
@@ -144,7 +144,7 @@ export default function DashboardPage() {
                 <select 
                   value={filterDoctor}
                   onChange={(e) => setFilterDoctor(e.target.value)}
-                  className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+                  className="block w-full h-10 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
                 >
                   <option value="">Todos os Médicos</option>
                   {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                 <select 
                   value={filterLocation}
                   onChange={(e) => setFilterLocation(e.target.value)}
-                  className="block w-full px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
+                  className="block w-full h-10 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:ring-blue-500 outline-none shadow-sm"
                 >
                   <option value="">Todos os Locais</option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
