@@ -228,7 +228,7 @@ export default function ReportsPage() {
                 setFilterDate(e.target.value);
                 if (e.target.value) setFilterMonth(e.target.value.substring(0, 7));
               }}
-              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
 
@@ -238,7 +238,7 @@ export default function ReportsPage() {
               type="month" 
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
-              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
 
@@ -247,7 +247,7 @@ export default function ReportsPage() {
             <select 
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value as any)}
-              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="location">Local de Atendimento</option>
               <option value="doctor">Médico</option>
@@ -261,7 +261,7 @@ export default function ReportsPage() {
               <select 
                 value={filterDoctor}
                 onChange={(e) => setFilterDoctor(e.target.value)}
-                className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value="">Todos os Médicos</option>
                 {doctors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -274,7 +274,7 @@ export default function ReportsPage() {
             <select 
               value={filterLocation}
               onChange={(e) => setFilterLocation(e.target.value)}
-              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="">Todos os Locais</option>
               {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -286,7 +286,7 @@ export default function ReportsPage() {
             <select 
               value={filterInsurance}
               onChange={(e) => setFilterInsurance(e.target.value)}
-              className="block w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              className="block w-full h-10 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
               <option value="">Todos os Convênios</option>
               {insurances.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
