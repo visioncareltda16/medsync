@@ -9,7 +9,8 @@ import {
   query, 
   orderBy,
   where,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 
 export type FinancialStatus = 'A RECEBER' | 'RECEBIDO';
@@ -33,6 +34,7 @@ export interface Attendance {
   realValue: number; // transferValue * quantity (ou cálculo exato)
   subtotal: number; // quantidade * transferValue
   status: FinancialStatus;
+  amountReceived?: number; // Valor já recebido
   receivedDate?: string;
   receivedBy?: string;
   createdAt: number;
@@ -89,11 +91,61 @@ export const deleteAttendance = async (id: string) => {
   return deleteDoc(docRef);
 };
 
-export const markAsReceived = async (id: string, receivedBy: string) => {
+export const markAsReceived = async (id: string, receivedBy: string, subtotal?: number) => {
   const docRef = doc(db, COLLECTION_NAME, id);
-  return updateDoc(docRef, {
+  const data: Partial<Attendance> = {
     status: 'RECEBIDO',
     receivedDate: new Date().toISOString(),
     receivedBy
+  };
+  
+  if (subtotal !== undefined) {
+    data.amountReceived = subtotal;
+  }
+  
+  return updateDoc(docRef, data);
+};
+
+export const registerPayment = async (id: string, amount: number, subtotal: number, receivedBy: string) => {
+  const docRef = doc(db, COLLECTION_NAME, id);
+  const isFullyPaid = amount >= subtotal;
+  
+  return updateDoc(docRef, {
+    status: isFullyPaid ? 'RECEBIDO' : 'A RECEBER',
+    amountReceived: amount,
+    receivedDate: new Date().toISOString(),
+    receivedBy
   });
+};
+
+export const undoPayment = async (id: string) => {
+  const docRef = doc(db, COLLECTION_NAME, id);
+  return updateDoc(docRef, {
+    status: 'A RECEBER',
+    amountReceived: 0,
+    receivedDate: '', // Ou podemos remover os campos, mas setar vazio/0 é mais seguro pro Firestore tipado
+    receivedBy: ''
+  });
+};
+
+export const registerBatchPayments = async (
+  updates: { id: string; amount: number; subtotal: number }[],
+  receivedBy: string
+) => {
+  const batch = writeBatch(db);
+  const now = new Date().toISOString();
+
+  updates.forEach(update => {
+    const docRef = doc(db, COLLECTION_NAME, update.id);
+    const isFullyPaid = update.amount >= update.subtotal;
+    
+    batch.update(docRef, {
+      status: isFullyPaid ? 'RECEBIDO' : 'A RECEBER',
+      amountReceived: update.amount,
+      receivedDate: now,
+      receivedBy
+    });
+  });
+
+  return batch.commit();
 };

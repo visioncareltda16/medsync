@@ -9,9 +9,9 @@ import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';
 import { Modal } from '@/components/ui/Modal';
-import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
+import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2, ChevronDown, ChevronUp, Banknote, Undo2 } from 'lucide-react';
 
-import { Attendance, getAttendances, addAttendance, updateAttendance, deleteAttendance, markAsReceived } from '@/services/attendances';
+import { Attendance, getAttendances, addAttendance, updateAttendance, deleteAttendance, markAsReceived, registerPayment, undoPayment, registerBatchPayments } from '@/services/attendances';
 import { Location, getLocations } from '@/services/locations';
 import { Doctor, getDoctors } from '@/services/doctors';
 import { Insurance, getInsurances } from '@/services/insurances';
@@ -48,6 +48,17 @@ export default function AttendancesPage() {
   const [showAllProcedures, setShowAllProcedures] = useState(false);
   const [isRulesExpanded, setIsRulesExpanded] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  // Payment Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAttendance, setPaymentAttendance] = useState<Attendance | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+
+  // Group Payment Modal State
+  const [isGroupPaymentModalOpen, setIsGroupPaymentModalOpen] = useState(false);
+  const [groupPaymentLocationId, setGroupPaymentLocationId] = useState('');
+  const [groupPaymentAmount, setGroupPaymentAmount] = useState<number | ''>('');
+  const [groupPaymentItems, setGroupPaymentItems] = useState<Attendance[]>([]);
 
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups(prev => ({
@@ -320,8 +331,118 @@ export default function AttendancesPage() {
   const handleMarkReceived = async (attendance: Attendance) => {
     if (attendance.status === 'RECEBIDO') return;
     if (window.confirm('Marcar como recebido?')) {
-      await markAsReceived(attendance.id, profile?.name || 'Sistema');
+      await markAsReceived(attendance.id, profile?.name || 'Sistema', attendance.subtotal);
       fetchData();
+    }
+  };
+
+  const handleOpenPaymentModal = (attendance: Attendance) => {
+    setPaymentAttendance(attendance);
+    const faltante = attendance.subtotal - (attendance.amountReceived || 0);
+    setPaymentAmount(faltante > 0 ? faltante : attendance.subtotal);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleClosePaymentModal = () => {
+    setIsPaymentModalOpen(false);
+    setPaymentAttendance(null);
+    setPaymentAmount('');
+  };
+
+  const handleRegisterPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentAttendance || typeof paymentAmount !== 'number' || paymentAmount <= 0) return;
+
+    try {
+      const newAmountReceived = (paymentAttendance.amountReceived || 0) + paymentAmount;
+      await registerPayment(
+        paymentAttendance.id, 
+        newAmountReceived, 
+        paymentAttendance.subtotal, 
+        profile?.name || 'Sistema'
+      );
+      handleClosePaymentModal();
+      fetchData();
+    } catch (error) {
+      console.error('Failed to register payment:', error);
+      alert('Erro ao registrar pagamento.');
+    }
+  };
+
+  const handleUndoPayment = async (attendance: Attendance) => {
+    if (window.confirm('Deseja desfazer o recebimento deste lançamento?')) {
+      try {
+        await undoPayment(attendance.id);
+        fetchData();
+      } catch (error) {
+        console.error('Failed to undo payment:', error);
+        alert('Erro ao desfazer recebimento.');
+      }
+    }
+  };
+
+  const handleOpenGroupPaymentModal = (locationId: string, items: Attendance[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Filtra os itens que não estão totalmente recebidos e os ordena para baixa (ex: mais antigos primeiro)
+    const pendingItems = items.filter(item => item.status !== 'RECEBIDO').sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    if (pendingItems.length === 0) {
+      alert('Não há pendências para este local.');
+      return;
+    }
+
+    setGroupPaymentItems(pendingItems);
+    setGroupPaymentLocationId(locationId);
+    setGroupPaymentAmount('');
+    setIsGroupPaymentModalOpen(true);
+  };
+
+  const handleCloseGroupPaymentModal = () => {
+    setIsGroupPaymentModalOpen(false);
+    setGroupPaymentLocationId('');
+    setGroupPaymentAmount('');
+    setGroupPaymentItems([]);
+  };
+
+  const handleRegisterGroupPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (typeof groupPaymentAmount !== 'number' || groupPaymentAmount <= 0 || groupPaymentItems.length === 0) return;
+
+    try {
+      let remainingValue = groupPaymentAmount;
+      const updates: { id: string; amount: number; subtotal: number }[] = [];
+
+      for (const item of groupPaymentItems) {
+        if (remainingValue <= 0) break;
+
+        const alreadyReceived = item.amountReceived || 0;
+        const missingForThisItem = item.subtotal - alreadyReceived;
+        
+        if (missingForThisItem <= 0) continue;
+
+        const valueToApply = Math.min(remainingValue, missingForThisItem);
+        const newTotalReceived = alreadyReceived + valueToApply;
+
+        updates.push({
+          id: item.id,
+          amount: newTotalReceived,
+          subtotal: item.subtotal
+        });
+
+        remainingValue -= valueToApply;
+      }
+
+      if (updates.length > 0) {
+        await registerBatchPayments(updates, profile?.name || 'Sistema');
+        handleCloseGroupPaymentModal();
+        fetchData();
+      } else {
+        alert('Nenhum valor pôde ser aplicado.');
+      }
+    } catch (error) {
+      console.error('Failed to register group payment:', error);
+      alert('Erro ao registrar pagamento em lote.');
     }
   };
 
@@ -486,23 +607,62 @@ export default function AttendancesPage() {
                   'bg-purple-100/70 dark:bg-purple-900/40',
                   'bg-rose-100/70 dark:bg-rose-900/40'
                 ];
+                const groupStats = group.items.reduce((acc, item) => {
+                  acc.total += item.subtotal;
+                  if (item.status === 'RECEBIDO') {
+                    acc.received += item.subtotal;
+                  } else if (item.amountReceived) {
+                    acc.received += item.amountReceived;
+                  }
+                  return acc;
+                }, { total: 0, received: 0 });
+
+                let headerBgClass = "bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/80";
+                let titleColorClass = "text-slate-900 dark:text-white";
+                let statusBadge = null;
+
+                if (groupStats.total > 0) {
+                  if (groupStats.received === 0) {
+                    titleColorClass = "text-purple-600 dark:text-purple-400";
+                    statusBadge = <span className="px-2 py-0.5 text-[10px] font-bold bg-purple-100 text-purple-700 rounded-full dark:bg-purple-900/40 dark:text-purple-300 uppercase">Pendente</span>;
+                  } else if (groupStats.received >= groupStats.total) {
+                    titleColorClass = "text-green-600 dark:text-green-400";
+                    statusBadge = <span className="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-full dark:bg-green-900/30 dark:text-green-400 uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3"/> Pago</span>;
+                  } else {
+                    titleColorClass = "text-orange-600 dark:text-orange-400";
+                    statusBadge = <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-700 rounded-full dark:bg-orange-900/30 dark:text-orange-400 uppercase">Parcial</span>;
+                  }
+                }
+
                 return (
                 <div key={groupId} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
                   <div 
-                    className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
+                    className={`px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer transition-colors ${headerBgClass}`}
                     onClick={() => toggleGroup(groupId)}
                   >
                     <div className="flex items-center gap-3">
-                      <h3 className="font-semibold text-lg text-slate-900 dark:text-white">{group.location?.name || 'Local Desconhecido'}</h3>
+                      <h3 className={`font-bold text-lg ${titleColorClass}`}>{group.location?.name || 'Local Desconhecido'}</h3>
+                      {statusBadge}
                       <div className="p-1 rounded-full bg-slate-200/50 dark:bg-slate-700/50 text-slate-500">
                         {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Subtotal Local</p>
-                      <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        R$ {group.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
+                    <div className="flex items-center gap-4 text-right">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Subtotal Local</p>
+                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                          R$ {group.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      {groupStats.received < groupStats.total && (
+                        <button 
+                          onClick={(e) => handleOpenGroupPaymentModal(groupId, group.items, e)}
+                          title="Pagamento em Lote" 
+                          className="ml-2 p-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-800/60 transition-colors shadow-sm"
+                        >
+                          <Banknote className="w-5 h-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -559,6 +719,12 @@ export default function AttendancesPage() {
                                   ? `Fixo de R$ ${item.transferRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
                                   : `${item.transferRate}% de R$ ${showValues ? item.transferValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '****'}`}
                               </div>
+                              {item.status === 'A RECEBER' && item.amountReceived && item.amountReceived > 0 && showValues ? (
+                                <div className="mt-1 text-[10px] text-orange-600 font-medium">
+                                  Recebido: R$ {item.amountReceived.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br/>
+                                  Falta: R$ {(item.subtotal - item.amountReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </div>
+                              ) : null}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-center">
                               {item.status === 'RECEBIDO' ? (
@@ -580,15 +746,25 @@ export default function AttendancesPage() {
                             <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-2">
                                 {item.status === 'A RECEBER' && (
-                                  <button onClick={() => handleMarkReceived(item)} title="Marcar como Recebido" className="text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-400">
-                                    <CheckCircle className="w-5 h-5" />
-                                  </button>
+                                  <>
+                                    <button onClick={() => handleMarkReceived(item)} title="Marcar Recebimento Total" className="text-green-600 hover:text-green-900 dark:text-green-500 dark:hover:text-green-400">
+                                      <CheckCircle className="w-5 h-5" />
+                                    </button>
+                                    <button onClick={() => handleOpenPaymentModal(item)} title="Registrar Valor Recebido" className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-500 dark:hover:text-emerald-400">
+                                      <Banknote className="w-5 h-5" />
+                                    </button>
+                                  </>
                                 )}
-                                <button onClick={() => openModal(item)} className="text-blue-600 hover:text-blue-900 dark:text-blue-500 dark:hover:text-blue-400">
+                                {(item.status === 'RECEBIDO' || (item.amountReceived && item.amountReceived > 0)) ? (
+                                  <button onClick={() => handleUndoPayment(item)} title="Desfazer Recebimento" className="text-orange-600 hover:text-orange-900 dark:text-orange-500 dark:hover:text-orange-400">
+                                    <Undo2 className="w-5 h-5" />
+                                  </button>
+                                ) : null}
+                                <button onClick={() => openModal(item)} title="Editar" className="text-blue-600 hover:text-blue-900 dark:text-blue-500 dark:hover:text-blue-400">
                                   <Edit2 className="w-5 h-5" />
                                 </button>
                                 {isAdmin && (
-                                  <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400">
+                                  <button onClick={() => handleDelete(item)} title="Excluir" className="text-red-600 hover:text-red-900 dark:text-red-500 dark:hover:text-red-400">
                                     <Trash2 className="w-5 h-5" />
                                   </button>
                                 )}
@@ -835,6 +1011,119 @@ export default function AttendancesPage() {
             <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Salvar Lançamento</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal de Pagamento Parcial */}
+      <Modal isOpen={isPaymentModalOpen} onClose={handleClosePaymentModal} title="Registrar Recebimento">
+        {paymentAttendance && (
+          <form onSubmit={handleRegisterPayment} className="space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Procedimento:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{procedures.find(p => p.id === paymentAttendance.procedureId)?.name || 'Desconhecido'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Valor Total:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">R$ {paymentAttendance.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              {paymentAttendance.amountReceived && paymentAttendance.amountReceived > 0 ? (
+                <div className="flex justify-between text-sm text-emerald-600">
+                  <span>Já Recebido:</span>
+                  <span className="font-medium">R$ {paymentAttendance.amountReceived.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+              ) : null}
+              <div className="flex justify-between text-sm text-orange-600 font-semibold border-t border-slate-200 dark:border-slate-700 pt-2">
+                <span>Falta Receber:</span>
+                <span>R$ {(paymentAttendance.subtotal - (paymentAttendance.amountReceived || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Valor Sendo Recebido Agora
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={paymentAttendance.subtotal - (paymentAttendance.amountReceived || 0)}
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value ? parseFloat(e.target.value) : '')}
+                  className="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="0,00"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Digite o valor que você está recebendo neste momento.</p>
+            </div>
+
+            <div className="pt-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-800">
+              <button type="button" onClick={handleClosePaymentModal} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center">
+                <Banknote className="w-4 h-4 mr-2" />
+                Registrar
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Modal de Pagamento em Lote */}
+      <Modal isOpen={isGroupPaymentModalOpen} onClose={handleCloseGroupPaymentModal} title="Pagamento em Lote">
+        {groupPaymentLocationId && (
+          <form onSubmit={handleRegisterGroupPayment} className="space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Local:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{locations.find(l => l.id === groupPaymentLocationId)?.name || 'Desconhecido'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Procedimentos Pendentes:</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{groupPaymentItems.length}</span>
+              </div>
+              <div className="flex justify-between text-sm text-orange-600 font-semibold border-t border-slate-200 dark:border-slate-700 pt-2">
+                <span>Total Pendente (Neste Local):</span>
+                <span>R$ {groupPaymentItems.reduce((acc, item) => acc + (item.subtotal - (item.amountReceived || 0)), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Valor Total Recebido
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={groupPaymentAmount}
+                  onChange={(e) => setGroupPaymentAmount(e.target.value ? parseFloat(e.target.value) : '')}
+                  className="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Ex: 2500,00"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">
+                O sistema fará a baixa automática nos procedimentos da lista (dos mais antigos para os mais novos) até que o valor digitado se esgote.
+              </p>
+            </div>
+
+            <div className="pt-4 flex justify-end space-x-3 border-t border-slate-200 dark:border-slate-800">
+              <button type="button" onClick={handleCloseGroupPaymentModal} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Cancelar</button>
+              <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center">
+                <Banknote className="w-4 h-4 mr-2" />
+                Distribuir Recebimento
+              </button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );
