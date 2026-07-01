@@ -7,6 +7,7 @@ import Header from './Header';
 import { useAuthStore } from '@/store/useAuthStore';
 import { initAuthListener, logout } from '@/services/auth';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
+import { useVisibilityTimeout } from '@/hooks/useVisibilityTimeout';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore();
@@ -21,6 +22,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login?timeout=true');
     }
   }, 30);
+
+  // Apply value visibility timeout
+  useVisibilityTimeout();
 
   useEffect(() => {
     const unsubscribe = initAuthListener();

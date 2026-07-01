@@ -651,7 +651,7 @@ export default function AttendancesPage() {
                       <div>
                         <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Subtotal Local</p>
                         <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                          R$ {group.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          {showValues ? `R$ ${group.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                         </p>
                       </div>
                       {groupStats.received < groupStats.total && (
