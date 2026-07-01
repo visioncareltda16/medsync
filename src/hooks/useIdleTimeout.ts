@@ -1,46 +1,35 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+
+let sessionDeadline = 0;
+
+export function getSessionDeadline() {
+  return sessionDeadline;
+}
 
 export function useIdleTimeout(onTimeout: () => void, timeoutMinutes: number = 30) {
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
+  const callbackRef = useRef(onTimeout);
 
-  const resetTimer = useCallback(() => {
+  // Mantém a referência da função de callback sempre atualizada sem causar re-renders
+  useEffect(() => {
+    callbackRef.current = onTimeout;
+  }, [onTimeout]);
+
+  useEffect(() => {
     if (timeoutId.current) {
       clearTimeout(timeoutId.current);
     }
+    
+    // Define o prazo final da sessão
+    sessionDeadline = Date.now() + timeoutMinutes * 60 * 1000;
+    
+    // Inicia o cronômetro
     timeoutId.current = setTimeout(() => {
-      onTimeout();
+      if (callbackRef.current) callbackRef.current();
     }, timeoutMinutes * 60 * 1000);
-  }, [onTimeout, timeoutMinutes]);
-
-  useEffect(() => {
-    const events = [
-      'mousemove',
-      'mousedown',
-      'resize',
-      'keydown',
-      'touchstart',
-      'scroll'
-    ];
-
-    const handleActivity = () => {
-      resetTimer();
-    };
-
-    // Initialize timer
-    resetTimer();
-
-    // Add event listeners
-    events.forEach(event => {
-      window.addEventListener(event, handleActivity, true);
-    });
 
     return () => {
-      if (timeoutId.current) {
-        clearTimeout(timeoutId.current);
-      }
-      events.forEach(event => {
-        window.removeEventListener(event, handleActivity, true);
-      });
+      if (timeoutId.current) clearTimeout(timeoutId.current);
     };
-  }, [resetTimer]);
+  }, [timeoutMinutes]); // O cronômetro só reinicia se o usuário mudar a quantidade de minutos
 }

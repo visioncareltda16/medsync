@@ -1,6 +1,61 @@
-import { Menu, Bell, User, Eye, EyeOff, Clock } from 'lucide-react';
+import { Menu, Bell, User, Eye, EyeOff, Clock, Timer } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useLayoutStore } from '@/store/useLayoutStore';
+import { useState, useEffect } from 'react';
+import { getSessionDeadline } from '@/hooks/useIdleTimeout';
+
+function SessionCountdown() {
+  const { sessionTimeout, setSessionTimeout } = useUIStore();
+  const [timeLeft, setTimeLeft] = useState<number>(sessionTimeout * 60);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const deadline = getSessionDeadline();
+      if (deadline > 0) {
+        const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) {
+      return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    }
+    return `${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+  };
+
+  return (
+    <div className="flex items-center space-x-2 bg-red-50 dark:bg-red-900/20 rounded-lg p-1 border border-red-200 dark:border-red-800 shadow-sm">
+      <div className="flex items-center space-x-1 px-2 text-red-600 dark:text-red-400" title="Tempo limite para expirar a sessão de login">
+        <Timer className="w-4 h-4" />
+        <span className={`text-sm font-mono font-bold min-w-[70px] text-center ${timeLeft < 300 ? 'animate-pulse' : ''}`}>
+          {formatTime(timeLeft)}
+        </span>
+      </div>
+      <div className="border-l border-red-200 dark:border-red-800 pl-1 pr-1">
+        <select
+          value={sessionTimeout}
+          onChange={(e) => setSessionTimeout(Number(e.target.value))}
+          className="bg-transparent border-none text-xs text-slate-600 dark:text-slate-300 focus:ring-0 cursor-pointer outline-none font-medium pr-4 py-1"
+          title="Tempo limite da sessão"
+        >
+          <option value={15}>15 min</option>
+          <option value={30}>30 min</option>
+          <option value={60}>1h</option>
+          <option value={120}>2h</option>
+          <option value={240}>4h</option>
+          <option value={480}>8h</option>
+        </select>
+      </div>
+    </div>
+  );
+}
 
 export default function Header() {
   const { showValues, toggleValues, visibilityTimeout, setVisibilityTimeout } = useUIStore();
@@ -18,6 +73,8 @@ export default function Header() {
       </div>
       
       <div className="flex items-center space-x-4">
+        <SessionCountdown />
+
         <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
           <button 
             onClick={toggleValues}

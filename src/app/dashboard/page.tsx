@@ -241,7 +241,7 @@ export default function DashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-2">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Evolução Mensal (Últimos 6 meses)</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -263,7 +263,7 @@ export default function DashboardPage() {
 
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Faturamento por Local ({filterDate ? 'Dia Atual' : 'Mês Atual'})</h3>
-          <div className="h-72">
+          <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData.locationData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
@@ -284,56 +284,80 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center">
-          <div className="w-full md:w-1/2">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Por Convênio</h3>
-            <p className="text-sm text-slate-500 mb-6">Faturamento segmentado por planos</p>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData.insuranceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {chartData.insuranceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Percentual por Local</h3>
+          <p className="text-sm text-slate-500 mb-6">Faturamento segmentado por local</p>
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData.locationData}
+                  cx="50%"
+                  cy="40%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="valor"
+                >
+                  {chartData.locationData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
+        </div>
 
-          <div className="w-full md:w-1/2 mt-8 md:mt-0">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Status de Recebimento</h3>
-            <p className="text-sm text-slate-500 mb-6">Inadimplência vs Recebido</p>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData.statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    <Cell fill="#10b981" /> {/* Recebido - Green */}
-                    <Cell fill="#f59e0b" /> {/* A Receber - Amber */}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Por Convênio</h3>
+          <p className="text-sm text-slate-500 mb-6">Faturamento segmentado por planos</p>
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData.insuranceData}
+                  cx="50%"
+                  cy="40%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {chartData.insuranceData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Status de Recebimento</h3>
+          <p className="text-sm text-slate-500 mb-6">Inadimplência vs Recebido</p>
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData.statusData}
+                  cx="50%"
+                  cy="40%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  <Cell fill="#10b981" /> {/* Recebido - Green */}
+                  <Cell fill="#f59e0b" /> {/* A Receber - Amber */}
+                </Pie>
+                <Tooltip formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '20px' }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

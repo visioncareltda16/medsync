@@ -7,6 +7,8 @@ interface UIState {
   setShowValues: (show: boolean) => void;
   visibilityTimeout: number; // In minutes, 0 means never
   setVisibilityTimeout: (minutes: number) => void;
+  sessionTimeout: number; // In minutes
+  setSessionTimeout: (minutes: number) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -17,6 +19,8 @@ export const useUIStore = create<UIState>()(
       setShowValues: (show) => set({ showValues: show }),
       visibilityTimeout: 0,
       setVisibilityTimeout: (minutes) => set({ visibilityTimeout: minutes }),
+      sessionTimeout: 30, // default 30 minutes
+      setSessionTimeout: (minutes) => set({ sessionTimeout: minutes }),
     }),
     {
       name: 'medsync-ui-storage',

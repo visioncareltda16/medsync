@@ -8,20 +8,22 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { initAuthListener, logout } from '@/services/auth';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useVisibilityTimeout } from '@/hooks/useVisibilityTimeout';
+import { useUIStore } from '@/store/useUIStore';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuthStore();
+  const { sessionTimeout } = useUIStore();
   const router = useRouter();
   const pathname = usePathname();
 
-  // 30 minutes inactivity timeout
+  // Session inactivity timeout
   useIdleTimeout(() => {
     if (user) {
       console.log('User logged out due to inactivity');
       logout();
       router.push('/login?timeout=true');
     }
-  }, 30);
+  }, sessionTimeout);
 
   // Apply value visibility timeout
   useVisibilityTimeout();
