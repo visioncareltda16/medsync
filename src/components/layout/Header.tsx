@@ -1,4 +1,4 @@
-import { Menu, Bell, User, Eye, EyeOff, Clock, Timer } from 'lucide-react';
+import { Menu, Bell, User, Eye, EyeOff, Timer } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useLayoutStore } from '@/store/useLayoutStore';
 import { useState, useEffect } from 'react';
