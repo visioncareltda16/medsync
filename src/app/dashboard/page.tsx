@@ -239,9 +239,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
         
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-2">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-3">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Evolução Mensal (Últimos 6 meses)</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-3">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Faturamento por Local ({filterDate ? 'Dia Atual' : 'Mês Atual'})</h3>
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
@@ -284,7 +284,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-2">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Percentual por Local</h3>
           <p className="text-sm text-slate-500 mb-6">Faturamento segmentado por local</p>
           <div className="h-96">
@@ -310,7 +310,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-2">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Por Convênio</h3>
           <p className="text-sm text-slate-500 mb-6">Faturamento segmentado por planos</p>
           <div className="h-96">
@@ -336,7 +336,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 lg:col-span-2">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Status de Recebimento</h3>
           <p className="text-sm text-slate-500 mb-6">Inadimplência vs Recebido</p>
           <div className="h-96">
