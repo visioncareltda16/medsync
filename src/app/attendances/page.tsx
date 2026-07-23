@@ -686,31 +686,53 @@ export default function AttendancesPage() {
                           <th className="px-3 py-2 text-right text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                        {group.items.map(item => {
+                      <tbody className="">
+                        {group.items.map((item, index) => {
                           const dateColor = dateColors[uniqueDates.indexOf(item.date) % dateColors.length];
+                          const previousItem = index > 0 ? group.items[index - 1] : null;
+                          const isSameAsPrevious = previousItem && 
+                            previousItem.patientName === item.patientName && 
+                            previousItem.date === item.date &&
+                            previousItem.doctorId === item.doctorId &&
+                            previousItem.insuranceId === item.insuranceId;
+
                           return (
-                          <tr key={item.id} className={`${dateColor} hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors`}>
-                            <td className="px-3 py-2 whitespace-nowrap">
-                              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{format(parseISO(item.date), 'dd/MM/yyyy')}</div>
-                              <div className="text-[11px] text-slate-500 capitalize">{item.dayOfWeek}</div>
+                          <tr 
+                            key={item.id} 
+                            onDoubleClick={() => openModal(item)}
+                            className={`${dateColor} hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer ${!isSameAsPrevious && index > 0 ? 'border-t border-slate-200 dark:border-slate-800' : ''}`}
+                          >
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap align-middle`}>
+                              {!isSameAsPrevious ? (
+                                <>
+                                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{format(parseISO(item.date), 'dd/MM/yyyy')}</div>
+                                  <div className="text-[11px] text-slate-500 capitalize">{item.dayOfWeek}</div>
+                                </>
+                              ) : (
+                                <div className="text-sm font-medium text-transparent">--</div>
+                              )}
                             </td>
                             {isAdmin && (
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-500">
-                                {doctors.find(d => d.id === item.doctorId)?.name || 'Desconhecido'}
+                              <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-sm text-slate-500 align-middle`}>
+                                {!isSameAsPrevious ? doctors.find(d => d.id === item.doctorId)?.name || 'Desconhecido' : ''}
                               </td>
                             )}
-                            <td className="px-3 py-2">
-                              <div className="text-sm font-medium text-slate-900 dark:text-slate-100 line-clamp-1">{item.patientName}</div>
-                              <div className="text-[11px] text-slate-500 line-clamp-1">{procedures.find(p => p.id === item.procedureId)?.name}</div>
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} align-middle`}>
+                              {!isSameAsPrevious && (
+                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100 line-clamp-1 mb-1">{item.patientName}</div>
+                              )}
+                              <div className="text-[11px] text-slate-500 line-clamp-1 flex items-center ml-2">
+                                <span className="mr-1 text-slate-300 dark:text-slate-600">└</span>
+                                {procedures.find(p => p.id === item.procedureId)?.name}
+                              </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-500">
-                              {insurances.find(i => i.id === item.insuranceId)?.name}
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-sm text-slate-500 align-middle`}>
+                              {!isSameAsPrevious ? insurances.find(i => i.id === item.insuranceId)?.name : ''}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100 text-right font-medium">
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-sm text-slate-900 dark:text-slate-100 text-right font-medium align-middle`}>
                               {item.quantity}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right">
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-right align-middle`}>
                               <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                                 {showValues ? `R$ ${item.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ ****'}
                               </div>
@@ -726,7 +748,7 @@ export default function AttendancesPage() {
                                 </div>
                               ) : null}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-center align-middle`}>
                               {item.status === 'RECEBIDO' ? (
                                 <span className="px-2 py-0.5 inline-flex text-[11px] leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                                   Recebido
@@ -738,12 +760,12 @@ export default function AttendancesPage() {
                               )}
                             </td>
                             {isAdmin && (
-                              <td className="px-3 py-2 whitespace-nowrap">
+                              <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap align-middle`}>
                                 <div className="text-[11px] font-medium text-slate-900 dark:text-slate-100">{item.createdBy || 'Sistema'}</div>
                                 <div className="text-[10px] text-slate-500">{item.createdByRole === 'ADMIN' ? 'Admin' : 'Médico'}</div>
                               </td>
                             )}
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-sm font-medium">
+                            <td className={`px-3 ${!isSameAsPrevious ? 'pt-3 pb-1' : 'py-1'} whitespace-nowrap text-right text-sm font-medium align-middle`}>
                               <div className="flex justify-end space-x-2">
                                 {item.status === 'A RECEBER' && (
                                   <>
