@@ -9,7 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';
 import { Modal } from '@/components/ui/Modal';
-import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2, ChevronDown, ChevronUp, Banknote, Undo2 } from 'lucide-react';
+import { CalendarDays, Filter, Plus, CheckCircle, Trash2, Edit2, ChevronDown, ChevronUp, Banknote, Undo2, Building2 } from 'lucide-react';
 
 import { Attendance, getAttendances, addAttendance, updateAttendance, deleteAttendance, markAsReceived, registerPayment, undoPayment, registerBatchPayments } from '@/services/attendances';
 import { Location, getLocations } from '@/services/locations';
@@ -641,8 +641,12 @@ export default function AttendancesPage() {
                     onClick={() => toggleGroup(groupId)}
                   >
                     <div className="flex items-center gap-3">
-                      {group.location?.logoUrl && (
+                      {group.location?.logoUrl ? (
                         <img src={group.location.logoUrl} alt={group.location.name} className="w-14 h-8 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
+                      ) : (
+                        <div className="w-14 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                          <Building2 className="w-4 h-4 text-slate-400" />
+                        </div>
                       )}
                       <h3 className={`font-bold text-lg ${titleColorClass}`}>{group.location?.name || 'Local Desconhecido'}</h3>
                       {statusBadge}
