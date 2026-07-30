@@ -15,6 +15,7 @@ interface DataTableProps<T> {
   onDelete?: (item: T) => void;
   searchPlaceholder?: string;
   searchableKey?: keyof T;
+  onRowDoubleClick?: (item: T) => void;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -25,6 +26,7 @@ export function DataTable<T extends { id: string }>({
   onDelete,
   searchPlaceholder = 'Buscar...',
   searchableKey,
+  onRowDoubleClick,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
@@ -120,7 +122,11 @@ export function DataTable<T extends { id: string }>({
           <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
             {filteredData.length > 0 ? (
               filteredData.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <tr 
+                  key={item.id} 
+                  className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${onRowDoubleClick ? 'cursor-pointer' : ''}`}
+                  onDoubleClick={() => onRowDoubleClick && onRowDoubleClick(item)}
+                >
                   {columns.map((column) => (
                     <td key={`${item.id}-${column.key}`} className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
                       {column.render ? column.render(item) : String((item as any)[column.key] ?? '-')}

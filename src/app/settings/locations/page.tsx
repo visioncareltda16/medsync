@@ -14,12 +14,13 @@ import {
   updateLocation, 
   deleteLocation 
 } from '@/services/locations';
-import { Building2 } from 'lucide-react';
+import { Building2, Upload, X } from 'lucide-react';
 
 const locationSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   address: z.string().min(1, 'Endereço é obrigatório'),
   phone: z.string().optional(),
+  logoUrl: z.string().optional(),
   active: z.boolean(),
 });
 
@@ -30,11 +31,25 @@ export default function LocationsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<LocationForm>({
     resolver: zodResolver(locationSchema),
     defaultValues: { active: true }
   });
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreviewLogo(base64String);
+        setValue('logoUrl', base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [showColumns, setShowColumns] = useState({
     name: true,
@@ -65,10 +80,13 @@ export default function LocationsPage() {
       setValue('name', location.name);
       setValue('address', location.address);
       setValue('phone', location.phone || '');
+      setValue('logoUrl', location.logoUrl || '');
       setValue('active', location.active);
+      setPreviewLogo(location.logoUrl || null);
     } else {
       setEditingLocation(null);
-      reset({ active: true, name: '', address: '', phone: '' });
+      reset({ active: true, name: '', address: '', phone: '', logoUrl: '' });
+      setPreviewLogo(null);
     }
     setIsModalOpen(true);
   };
@@ -76,6 +94,7 @@ export default function LocationsPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingLocation(null);
+    setPreviewLogo(null);
     reset();
   };
 
@@ -119,7 +138,22 @@ export default function LocationsPage() {
         </Link>
       )
     },
-    showColumns.name && { key: 'name', header: 'Nome' },
+    showColumns.name && { 
+      key: 'name', 
+      header: 'Nome',
+      render: (item: Location) => (
+        <div className="flex items-center space-x-3">
+          {item.logoUrl ? (
+            <img src={item.logoUrl} alt={item.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+              <Building2 className="w-4 h-4 text-slate-400" />
+            </div>
+          )}
+          <span className="font-medium text-slate-900 dark:text-white">{item.name}</span>
+        </div>
+      )
+    },
     showColumns.address && { key: 'address', header: 'Endereço' },
     showColumns.phone && { key: 'phone', header: 'Telefone', render: (item: Location) => item.phone || '-' },
     showColumns.active && { 
@@ -177,6 +211,7 @@ export default function LocationsPage() {
           onAdd={() => openModal()}
           onEdit={openModal}
           onDelete={handleDelete}
+          onRowDoubleClick={openModal}
           searchPlaceholder="Buscar local..."
           searchableKey="name"
         />
@@ -188,6 +223,46 @@ export default function LocationsPage() {
         title={editingLocation ? 'Editar Local' : 'Novo Local'}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Logo (opcional)
+            </label>
+            <div className="flex items-center space-x-4">
+              {previewLogo ? (
+                <div className="relative">
+                  <img src={previewLogo} alt="Logo preview" className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-slate-700 bg-white" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewLogo(null);
+                      setValue('logoUrl', '');
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full p-1 hover:bg-red-200 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 border-dashed">
+                  <Building2 className="w-6 h-6 text-slate-400" />
+                </div>
+              )}
+              <div className="flex-1">
+                <label className="flex items-center justify-center w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <Upload className="w-4 h-4 mr-2" />
+                  {previewLogo ? 'Trocar imagem' : 'Fazer upload da logo'}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                  />
+                </label>
+                <p className="mt-1 text-xs text-slate-500">PNG, JPG ou GIF. Máx 2MB.</p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Nome do Local

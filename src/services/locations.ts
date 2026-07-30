@@ -15,6 +15,7 @@ export interface Location {
   name: string;
   address: string;
   phone?: string;
+  logoUrl?: string;
   active: boolean;
 }
 
