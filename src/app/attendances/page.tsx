@@ -642,10 +642,10 @@ export default function AttendancesPage() {
                   >
                     <div className="flex items-center gap-3">
                       {group.location?.logoUrl ? (
-                        <img src={group.location.logoUrl} alt={group.location.name} className="w-14 h-8 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
+                        <img src={group.location.logoUrl} alt={group.location.name} className="h-12 w-28 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-1" />
                       ) : (
-                        <div className="w-14 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                          <Building2 className="w-4 h-4 text-slate-400" />
+                        <div className="h-12 w-16 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                          <Building2 className="w-6 h-6 text-slate-400" />
                         </div>
                       )}
                       <h3 className={`font-bold text-lg ${titleColorClass}`}>{group.location?.name || 'Local Desconhecido'}</h3>

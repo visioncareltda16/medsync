@@ -144,10 +144,10 @@ export default function LocationsPage() {
       render: (item: Location) => (
         <div className="flex items-center space-x-3">
           {item.logoUrl ? (
-            <img src={item.logoUrl} alt={item.name} className="w-14 h-8 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
+            <img src={item.logoUrl} alt={item.name} className="h-10 w-20 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
           ) : (
-            <div className="w-14 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-              <Building2 className="w-4 h-4 text-slate-400" />
+            <div className="h-10 w-16 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+              <Building2 className="w-5 h-5 text-slate-400" />
             </div>
           )}
           <span className="font-medium text-slate-900 dark:text-white">{item.name}</span>
