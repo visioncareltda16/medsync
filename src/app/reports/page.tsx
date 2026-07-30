@@ -132,10 +132,15 @@ export default function ReportsPage() {
               const match = imgData.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,/i);
               if (match) {
                 const format = match[1].toUpperCase() === 'JPG' ? 'JPEG' : match[1].toUpperCase();
+                // Get original image properties to maintain aspect ratio
+                const props = doc.getImageProperties(imgData);
+                const imgHeight = 8; // Slightly larger for better visibility
+                const imgWidth = (props.width && props.height) ? (props.width / props.height) * imgHeight : 14;
+                
                 // Add the image. We adjust y slightly because text y is the baseline.
                 // startY is text baseline. So image should start a bit higher.
-                doc.addImage(imgData, format, headerX, startY - 4, 10, 6, '', 'FAST');
-                headerX += 12; // Shift text to the right
+                doc.addImage(imgData, format, headerX, startY - 6, imgWidth, imgHeight, '', 'FAST');
+                headerX += imgWidth + 2; // Shift text to the right, plus some padding
               }
             } catch (e) {
               console.warn('Failed to add logo to PDF:', e);
