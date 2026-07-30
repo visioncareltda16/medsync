@@ -641,6 +641,9 @@ export default function AttendancesPage() {
                     onClick={() => toggleGroup(groupId)}
                   >
                     <div className="flex items-center gap-3">
+                      {group.location?.logoUrl && (
+                        <img src={group.location.logoUrl} alt={group.location.name} className="w-14 h-8 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
+                      )}
                       <h3 className={`font-bold text-lg ${titleColorClass}`}>{group.location?.name || 'Local Desconhecido'}</h3>
                       {statusBadge}
                       <div className="p-1 rounded-full bg-slate-200/50 dark:bg-slate-700/50 text-slate-500">

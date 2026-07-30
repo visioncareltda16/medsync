@@ -121,7 +121,29 @@ export default function ReportsPage() {
 
         doc.setFontSize(11);
         doc.setTextColor(15, 23, 42); // slate-900
-        doc.text(`${groupBy === 'location' ? 'Local' : groupBy === 'doctor' ? 'Médico' : 'Convênio'}: ${groupName}`, 14, startY);
+
+        let headerX = 14;
+        
+        if (groupBy === 'location') {
+          const loc = locations.find(l => l.name === groupName);
+          if (loc && loc.logoUrl) {
+            try {
+              const imgData = loc.logoUrl;
+              const match = imgData.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,/i);
+              if (match) {
+                const format = match[1].toUpperCase() === 'JPG' ? 'JPEG' : match[1].toUpperCase();
+                // Add the image. We adjust y slightly because text y is the baseline.
+                // startY is text baseline. So image should start a bit higher.
+                doc.addImage(imgData, format, headerX, startY - 4, 10, 6, '', 'FAST');
+                headerX += 12; // Shift text to the right
+              }
+            } catch (e) {
+              console.warn('Failed to add logo to PDF:', e);
+            }
+          }
+        }
+
+        doc.text(`${groupBy === 'location' ? 'Local' : groupBy === 'doctor' ? 'Médico' : 'Convênio'}: ${groupName}`, headerX, startY);
 
         const tableData = groupItems.map(item => {
           // Fallback to calculate real subtotal if it's missing or quantity wasn't multiplied in older records
