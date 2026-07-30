@@ -144,9 +144,9 @@ export default function LocationsPage() {
       render: (item: Location) => (
         <div className="flex items-center space-x-3">
           {item.logoUrl ? (
-            <img src={item.logoUrl} alt={item.name} className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+            <img src={item.logoUrl} alt={item.name} className="w-14 h-8 rounded object-contain bg-white border border-slate-200 dark:border-slate-700 p-0.5" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+            <div className="w-14 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700">
               <Building2 className="w-4 h-4 text-slate-400" />
             </div>
           )}
@@ -230,7 +230,7 @@ export default function LocationsPage() {
             <div className="flex items-center space-x-4">
               {previewLogo ? (
                 <div className="relative">
-                  <img src={previewLogo} alt="Logo preview" className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-slate-700 bg-white" />
+                  <img src={previewLogo} alt="Logo preview" className="w-24 h-16 rounded-lg object-contain border border-slate-200 dark:border-slate-700 bg-white p-1" />
                   <button
                     type="button"
                     onClick={() => {
@@ -243,7 +243,7 @@ export default function LocationsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 border-dashed">
+                <div className="w-24 h-16 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 border-dashed">
                   <Building2 className="w-6 h-6 text-slate-400" />
                 </div>
               )}
